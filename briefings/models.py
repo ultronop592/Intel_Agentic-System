@@ -44,3 +44,21 @@ class Briefing(models.Model):
                 if line.startswith("+") or line.startswith("-")
             ]
         )
+
+
+class SwotReport(models.Model):
+    user = models.ForeignKey("auth.User", on_delete=models.CASCADE, related_name="swot_reports")
+    content = models.TextField()
+    strengths = models.TextField(blank=True)
+    weaknesses = models.TextField(blank=True)
+    opportunities = models.TextField(blank=True)
+    threats = models.TextField(blank=True)
+    period_start = models.DateField()
+    period_end = models.DateField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ("-created_at",)
+
+    def __str__(self) -> str:
+        return f"SWOT Report {self.period_start} to {self.period_end}"

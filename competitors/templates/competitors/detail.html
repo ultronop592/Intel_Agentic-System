@@ -111,6 +111,26 @@
             </div>
         </div>
 
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h2 class="h5 mb-0">Discovered pages</h2>
+                    <span class="badge text-bg-light">{{ discovered_pages|length }} found</span>
+                </div>
+                {% for page in discovered_pages %}
+                    <div class="mb-3 pb-3 border-bottom last-child-no-border">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span class="badge {% if page.page_type == 'pricing' %}text-bg-success{% elif page.page_type == 'features' %}text-bg-primary{% else %}text-bg-secondary{% endif %} text-uppercase" style="font-size: 10px;">{{ page.page_type }}</span>
+                            <span class="small text-muted">{{ page.discovered_at|date:"d M Y" }}</span>
+                        </div>
+                        <a href="{{ page.url }}" target="_blank" class="small text-truncate d-block text-decoration-none" style="max-width: 100%;">{{ page.url }}</a>
+                    </div>
+                {% empty %}
+                    <p class="text-secondary mb-0">No other pages discovered yet.</p>
+                {% endfor %}
+            </div>
+        </div>
+
         <div class="card border-0 shadow-sm">
             <div class="card-body p-4">
                 <h2 class="h5">Scan summary</h2>

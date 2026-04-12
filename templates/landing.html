@@ -1,66 +1,151 @@
 {% extends 'base.html' %}
 {% block title %}IntelAgent{% endblock %}
 {% block content %}
-<section class="hero-surface rounded-4 p-4 p-lg-5">
-    <div class="row align-items-center g-4">
-        <div class="col-lg-7">
-            <span class="eyebrow mb-3 d-inline-flex">Competitive Intelligence Agent</span>
-            <h1 class="display-4 fw-bold mb-3">Know what your competitors are doing before your customers do.</h1>
-            <p class="lead text-secondary mb-4">Run website scans on demand, preserve competitor history, and turn noisy changes into briefings your team can act on.</p>
-            <div class="d-flex flex-wrap gap-2">
-                <a href="{% url 'accounts:signup' %}" class="btn btn-primary btn-lg">Start free</a>
-                <a href="{% url 'accounts:login' %}" class="btn btn-outline-secondary btn-lg">See the workspace</a>
-            </div>
-        </div>
-        <div class="col-lg-5">
-            <div class="card glass-card shadow-sm border-0">
-                <div class="card-body p-4">
-                    <div class="d-flex justify-content-between align-items-center mb-4">
-                        <strong>Morning brief</strong>
-                        <span class="badge text-bg-light">New change set</span>
-                    </div>
-                    <h3 class="h5">Acme Analytics</h3>
-                    <p class="text-secondary">Pricing is now public, homepage messaging leans into AI ops, and new PM roles suggest investment in workflow intelligence.</p>
-                    <ul class="mb-0">
-                        <li>Starter plan visible at $49/month</li>
-                        <li>New “agent operations” section on homepage</li>
-                        <li>Three fresh roles mention customer intelligence</li>
-                    </ul>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
+<style>
+    .hero-section {
+        background-color: var(--bg-primary);
+        padding: 48px 0;
+    }
+    .hero-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 48px;
+        align-items: center;
+    }
+    @media (min-width: 992px) {
+        .hero-grid {
+            grid-template-columns: 1.2fr 1fr;
+        }
+    }
+    .hero-title {
+        font-size: 56px;
+        font-weight: 700;
+        color: #fff;
+        line-height: 1.1;
+        margin-bottom: 24px;
+    }
+    .hero-text {
+        font-size: 18px;
+        color: var(--text-secondary);
+        margin-bottom: 32px;
+        max-width: 500px;
+    }
+    .demo-card {
+        background-color: var(--bg-secondary);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 24px;
+    }
+    .demo-badge {
+        font-size: 11px;
+        background: var(--bg-tertiary);
+        padding: 4px 8px;
+        border-radius: 12px;
+        color: var(--text-secondary);
+    }
+    .feature-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 24px;
+        margin-top: 64px;
+    }
+    @media (min-width: 768px) {
+        .feature-grid { grid-template-columns: repeat(3, 1fr); }
+    }
+    .feature-card {
+        background-color: var(--bg-secondary);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 24px;
+    }
+    .feature-icon-box {
+        width: 48px;
+        height: 48px;
+        background: rgba(217, 119, 6, 0.15); /* Orange accent */
+        color: var(--accent);
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        margin-bottom: 16px;
+    }
+</style>
 
-<section class="mt-5">
-    <div class="row g-4">
-        <div class="col-md-4">
-            <div class="card h-100 border-0 shadow-sm">
-                <div class="card-body p-4">
-                    <div class="feature-icon mb-3"><i class="bi bi-radar"></i></div>
-                    <h2 class="h5">Competitor monitoring</h2>
-                    <p class="text-secondary mb-0">Track product pages, pricing pages, and messaging across your watchlist from one dashboard.</p>
-                </div>
+<div class="hero-section">
+    <div class="hero-grid">
+        <div class="hero-left slide-up stagger-1">
+            <h1 class="hero-title fade-in stagger-2">Know what your competitors are doing before your customers do.</h1>
+            <p class="hero-text fade-in stagger-3">Run website scans on demand, preserve competitor history, and turn noisy changes into briefings your team can act on.</p>
+            <div class="d-flex gap-3 fade-in stagger-4">
+                <a href="{% url 'accounts:signup' %}" class="btn btn-primary" style="padding: 12px 24px; font-size: 16px;">Start free</a>
+                <a href="{% url 'accounts:login' %}" class="btn btn-secondary" style="padding: 12px 24px; font-size: 16px; color:#ececec;">See the workspace</a>
             </div>
         </div>
-        <div class="col-md-4">
-            <div class="card h-100 border-0 shadow-sm">
-                <div class="card-body p-4">
-                    <div class="feature-icon mb-3"><i class="bi bi-stars"></i></div>
-                    <h2 class="h5">AI strategic briefings</h2>
-                    <p class="text-secondary mb-0">Convert diffs into actionable summaries with insights and recommendations for the week ahead.</p>
+        <div class="hero-right slide-up stagger-3">
+            <div class="demo-card shadow-sm" style="transition: transform 0.3s ease; cursor: default;" onmouseover="this.style.transform='translateY(-5px)'" onmouseout="this.style.transform='translateY(0)'">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <strong style="color: #fff;"><i class="bi bi-robot" style="margin-right: 8px; color: var(--accent);"></i>Morning brief</strong>
+                    <span class="demo-badge">New change set</span>
                 </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card h-100 border-0 shadow-sm">
-                <div class="card-body p-4">
-                    <div class="feature-icon mb-3"><i class="bi bi-graph-up-arrow"></i></div>
-                    <h2 class="h5">Change analytics</h2>
-                    <p class="text-secondary mb-0">Spot momentum, scan history, and competitor activity trends without manual note-taking.</p>
-                </div>
+                <h3 class="mb-2" style="font-size: 20px; font-family: 'Newsreader', serif; font-weight: 500;">Acme Analytics</h3>
+                <p class="text-muted" style="margin-bottom:16px;">Pricing is now public, homepage messaging leans into AI ops, and new PM roles suggest investment in workflow intelligence.</p>
+                <ul style="margin-left: 20px; color: var(--text-secondary); line-height: 1.8;">
+                    <li>Starter plan visible at $49/month</li>
+                    <li>New "agent operations" section on homepage</li>
+                    <li>Three fresh roles mention customer intelligence</li>
+                </ul>
             </div>
         </div>
     </div>
-</section>
+
+    <div class="feature-grid">
+        <div class="feature-card slide-up stagger-2" style="transition: transform 0.3s ease; cursor: default;" onmouseover="this.style.transform='translateY(-5px)'" onmouseout="this.style.transform='translateY(0)'">
+            <div class="feature-icon-box" style="transition: transform 0.3s ease;"><i class="bi bi-radar"></i></div>
+            <h2 class="mb-2" style="font-size: 18px; font-family: 'Newsreader', serif; font-weight: 500;">Competitor monitoring</h2>
+            <p class="text-muted mb-0">Track product pages, pricing pages, and messaging across your watchlist from one dashboard.</p>
+        </div>
+        <div class="feature-card slide-up stagger-3" style="transition: transform 0.3s ease; cursor: default;" onmouseover="this.style.transform='translateY(-5px)'" onmouseout="this.style.transform='translateY(0)'">
+            <div class="feature-icon-box"><i class="bi bi-stars"></i></div>
+            <h2 class="mb-2" style="font-size: 18px; font-family: 'Newsreader', serif; font-weight: 500;">AI strategic briefings</h2>
+            <p class="text-muted mb-0">Convert diffs into actionable summaries with insights and recommendations for the week ahead.</p>
+        </div>
+        <div class="feature-card slide-up stagger-4" style="transition: transform 0.3s ease; cursor: default;" onmouseover="this.style.transform='translateY(-5px)'" onmouseout="this.style.transform='translateY(0)'">
+            <div class="feature-icon-box"><i class="bi bi-graph-up-arrow"></i></div>
+            <h2 class="mb-2" style="font-size: 18px; font-family: 'Newsreader', serif; font-weight: 500;">Change analytics</h2>
+            <p class="text-muted mb-0">Spot momentum, scan history, and competitor activity trends without manual note-taking.</p>
+        </div>
+    </div>
+
+    <!-- Agent Breakdown Section -->
+    <div class="slide-up stagger-3" style="margin-top: 96px; padding-top: 64px; border-top: 1px solid var(--border);">
+        <div style="text-align: center; margin-bottom: 48px;">
+            <span class="demo-badge" style="background: rgba(217, 119, 6, 0.1); color: var(--accent); padding: 6px 12px; margin-bottom: 16px; display: inline-block;">Autonomous Agent Architecture</span>
+            <h2 style="font-size: 36px; margin-bottom: 16px; font-family: 'Newsreader', serif; font-weight: 500;">Meet the IntelAgent</h2>
+            <p class="text-muted" style="max-width: 600px; margin: 0 auto; font-size: 16px;">
+                A specialized language model pipeline that works around the clock to track, analyze, and synthesize competitor movements into strategic playbooks.
+            </p>
+        </div>
+        
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 32px;">
+            <div style="background: var(--bg-tertiary); border: 1px solid var(--border); border-radius: 12px; padding: 32px; position: relative; overflow: hidden;">
+                <div style="font-size: 48px; color: rgba(255,255,255,0.05); position: absolute; right: 20px; top: 20px; font-weight: 800;">01</div>
+                <h3 style="font-size: 18px; margin-bottom: 12px; font-family: 'Newsreader', serif; font-weight: 500;"><i class="bi bi-cloud-download text-muted me-2"></i> Targeted Scraping</h3>
+                <p class="text-muted" style="font-size: 14px; line-height: 1.6;">The agent systematically extracts structured text from targeted competitor pages, bypassing trackers and preserving historical state.</p>
+            </div>
+            
+            <div style="background: var(--bg-tertiary); border: 1px solid var(--border); border-radius: 12px; padding: 32px; position: relative; overflow: hidden;">
+                <div style="font-size: 48px; color: rgba(255,255,255,0.05); position: absolute; right: 20px; top: 20px; font-weight: 800;">02</div>
+                <h3 style="font-size: 18px; margin-bottom: 12px; font-family: 'Newsreader', serif; font-weight: 500;"><i class="bi bi-braces-asterisk text-muted me-2"></i> Change Detection</h3>
+                <p class="text-muted" style="font-size: 14px; line-height: 1.6;">Advanced diffing algorithms compare the exact structural state of the previous snapshot with the live version, isolating granular changes.</p>
+            </div>
+            
+            <div style="background: var(--bg-tertiary); border: 1px solid var(--border); border-radius: 12px; padding: 32px; position: relative; overflow: hidden;">
+                <div style="font-size: 48px; color: rgba(255,255,255,0.05); position: absolute; right: 20px; top: 20px; font-weight: 800;">03</div>
+                <h3 style="font-size: 18px; margin-bottom: 12px; font-family: 'Newsreader', serif; font-weight: 500;"><i class="bi bi-robot text-muted me-2"></i> Strategic Synthesis</h3>
+                <p class="text-muted" style="font-size: 14px; line-height: 1.6;">Changes are fed into a fine-tuned language model that writes a highly contextual intelligence report outlining meaning and strategic impact.</p>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}

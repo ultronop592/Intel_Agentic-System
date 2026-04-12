@@ -1,0 +1,164 @@
+{% extends 'base.html' %}
+{% block title %}SWOT Analysis{% endblock %}
+{% block page_title %}Strategic SWOT Matrix{% endblock %}
+
+{% block topbar_actions %}
+<form method="post">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-primary" id="regenerateBtn">
+        <i class="bi bi-arrow-repeat me-1"></i> Regenerate Matrix
+    </button>
+</form>
+{% endblock %}
+
+{% block content %}
+<style>
+    .swot-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 24px;
+        margin-top: 24px;
+    }
+    @media (min-width: 992px) {
+        .swot-grid {
+            grid-template-columns: 1fr 1fr;
+        }
+    }
+    
+    .swot-card {
+        background: var(--bg-secondary);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 32px;
+        position: relative;
+        overflow: hidden;
+        min-height: 280px;
+    }
+    
+    .swot-type-label {
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-weight: 700;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .swot-header {
+        font-family: 'Newsreader', serif;
+        font-size: 24px;
+        margin-bottom: 24px;
+        color: #fff;
+    }
+    
+    .swot-content {
+        font-size: 14px;
+        color: var(--text-secondary);
+        line-height: 1.7;
+    }
+    
+    .swot-card.strength { border-top: 4px solid #10b981; }
+    .swot-card.weakness { border-top: 4px solid #ef4444; }
+    .swot-card.opportunity { border-top: 4px solid #3b82f6; }
+    .swot-card.threat { border-top: 4px solid #f59e0b; }
+    
+    .swot-icon-bg {
+        position: absolute;
+        right: -20px;
+        bottom: -20px;
+        font-size: 120px;
+        opacity: 0.03;
+        color: var(--text-primary);
+        transform: rotate(-15deg);
+    }
+    
+    .swot-summary {
+        background: var(--bg-secondary);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 32px;
+        margin-bottom: 32px;
+        border-left: 4px solid var(--accent);
+    }
+</style>
+
+{% if swot %}
+    <div class="swot-summary slide-up stagger-1">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h2 class="h5 font-newsreader m-0">Strategic Overview</h2>
+            <span class="badge badge-neutral">Period: {{ swot.period_start|date:"M d" }} — {{ swot.period_end|date:"M d, Y" }}</span>
+        </div>
+        <p class="text-secondary m-0" style="line-height: 1.7;">{{ swot.content }}</p>
+    </div>
+
+    <div class="swot-grid">
+        <!-- Strengths -->
+        <div class="swot-card strength slide-up stagger-2">
+            <div class="swot-type-label" style="color: #10b981;">
+                <i class="bi bi-shield-check"></i> Internal Strengths
+            </div>
+            <h3 class="swot-header">Strengths</h3>
+            <div class="swot-content">
+                {{ swot.strengths|linebreaks }}
+            </div>
+            <i class="bi bi-shield-check swot-icon-bg"></i>
+        </div>
+        
+        <!-- Weaknesses -->
+        <div class="swot-card weakness slide-up stagger-2">
+            <div class="swot-type-label" style="color: #ef4444;">
+                <i class="bi bi-shield-slash"></i> Internal Weaknesses
+            </div>
+            <h3 class="swot-header">Weaknesses</h3>
+            <div class="swot-content">
+                {{ swot.weaknesses|linebreaks }}
+            </div>
+            <i class="bi bi-shield-slash swot-icon-bg"></i>
+        </div>
+        
+        <!-- Opportunities -->
+        <div class="swot-card opportunity slide-up stagger-3">
+            <div class="swot-type-label" style="color: #3b82f6;">
+                <i class="bi bi-graph-up-arrow"></i> External Opportunities
+            </div>
+            <h3 class="swot-header">Opportunities</h3>
+            <div class="swot-content">
+                {{ swot.opportunities|linebreaks }}
+            </div>
+            <i class="bi bi-graph-up-arrow swot-icon-bg"></i>
+        </div>
+        
+        <!-- Threats -->
+        <div class="swot-card threat slide-up stagger-3">
+            <div class="swot-type-label" style="color: #f59e0b;">
+                <i class="bi bi-exclamation-triangle"></i> External Threats
+            </div>
+            <h3 class="swot-header">Threats</h3>
+            <div class="swot-content">
+                {{ swot.threats|linebreaks }}
+            </div>
+            <i class="bi bi-exclamation-triangle swot-icon-bg"></i>
+        </div>
+    </div>
+{% else %}
+    <div class="card" style="text-align: center; padding: 64px;">
+        <i class="bi bi-grid-3x3-gap" style="font-size: 48px; color: var(--text-tertiary); margin-bottom: 24px; display: block;"></i>
+        <h2 class="h4 font-newsreader mb-3">No SWOT Report Available</h2>
+        <p class="text-secondary mx-auto" style="max-width: 500px; margin-bottom: 32px;">
+            We need at least some processed briefings to generate a strategic matrix. Run your competitor agents first!
+        </p>
+        <div class="d-flex justify-content-center gap-3">
+            <a href="{% url 'competitors:dashboard' %}" class="btn btn-primary">Go to Dashboard</a>
+        </div>
+    </div>
+{% endif %}
+
+<script>
+    document.getElementById('regenerateBtn')?.addEventListener('click', function() {
+        this.innerHTML = '<i class="bi bi-arrow-repeat spin me-1"></i> Synthesizing Data...';
+        this.classList.add('disabled');
+    });
+</script>
+{% endblock %}

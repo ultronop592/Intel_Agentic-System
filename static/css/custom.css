@@ -1,18 +1,16 @@
 :root {
-    --ia-primary: #6366f1;
-    --ia-primary-dark: #4338ca;
-    --ia-bg: #f3f5fb;
+    --ia-primary: #f97316;
+    --ia-primary-dark: #ea580c;
+    --ia-bg: #fffbf0;
     --ia-surface: #ffffff;
-    --ia-border: #e5e7eb;
-    --ia-text: #0f172a;
-    --ia-muted: #64748b;
+    --ia-border: #e2e8f0;
+    --ia-text: #292524;
+    --ia-muted: #78716c;
 }
 
 body {
     min-height: 100vh;
-    background:
-        radial-gradient(circle at top right, rgba(99, 102, 241, 0.10), transparent 24rem),
-        linear-gradient(180deg, #f8faff 0%, var(--ia-bg) 100%);
+    background: var(--ia-bg);
     color: var(--ia-text);
     font-family: "Inter", sans-serif;
 }
@@ -28,13 +26,14 @@ a {
 
 .sidebar {
     width: 272px;
-    background: linear-gradient(180deg, #111827 0%, #0f172a 100%);
+    background: #211e1d;
     color: #fff;
     flex-direction: column;
     padding: 1.5rem 1rem;
     position: sticky;
     top: 0;
     height: 100vh;
+    box-shadow: 4px 0 16px rgba(0, 0, 0, 0.06);
 }
 
 .sidebar-brand {
@@ -61,7 +60,7 @@ a {
     align-items: center;
     justify-content: center;
     border-radius: 14px;
-    background: rgba(99, 102, 241, 0.24);
+    background: rgba(249, 115, 22, 0.24);
 }
 
 .sidebar-nav {
@@ -72,17 +71,30 @@ a {
 .sidebar-link {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
-    padding: 0.875rem 1rem;
-    border-radius: 1rem;
-    color: rgba(255, 255, 255, 0.72);
+    gap: 0.85rem;
+    padding: 0.85rem 1.25rem;
+    border-radius: 0.75rem;
+    color: rgba(255, 255, 255, 0.6);
     text-decoration: none;
+    font-weight: 500;
+    transition: all 0.2s ease-in-out;
+    margin-bottom: 0.25rem;
 }
 
-.sidebar-link.active,
 .sidebar-link:hover {
-    background: rgba(255, 255, 255, 0.08);
-    color: #fff;
+    background: rgba(255, 255, 255, 0.05);
+    color: rgba(255, 255, 255, 0.9);
+    transform: translateX(4px);
+}
+
+.sidebar-link.active {
+    background: rgba(249, 115, 22, 0.15);
+    color: #f97316;
+    font-weight: 600;
+}
+
+.sidebar-link.active i {
+    color: #f97316;
 }
 
 .main-panel {
@@ -91,9 +103,8 @@ a {
 }
 
 .topbar {
-    background: rgba(255, 255, 255, 0.82);
-    backdrop-filter: blur(14px);
-    border-bottom: 1px solid rgba(148, 163, 184, 0.15);
+    background: #ffffff;
+    border-bottom: 1px solid var(--ia-border);
 }
 
 .content-area {
@@ -101,11 +112,9 @@ a {
 }
 
 .hero-surface {
-    background:
-        linear-gradient(130deg, rgba(99, 102, 241, 0.12), rgba(255, 255, 255, 0.96)),
-        var(--ia-surface);
-    border: 1px solid rgba(99, 102, 241, 0.14);
-    box-shadow: 0 18px 42px rgba(15, 23, 42, 0.08);
+    background: var(--ia-surface);
+    border: 1px solid var(--ia-border);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
 }
 
 .eyebrow {
@@ -114,18 +123,17 @@ a {
     letter-spacing: 0.08em;
     text-transform: uppercase;
     color: var(--ia-primary-dark);
-    background: rgba(99, 102, 241, 0.1);
+    background: rgba(249, 115, 22, 0.1);
     border-radius: 999px;
     padding: 0.45rem 0.8rem;
 }
 
 .glass-card {
-    background: rgba(255, 255, 255, 0.82);
-    backdrop-filter: blur(14px);
+    background: var(--ia-surface);
 }
 
 .auth-shell {
-    background: var(--ia-surface);
+    background: var(--ia-bg);
 }
 
 .auth-panel {
@@ -133,9 +141,7 @@ a {
 }
 
 .auth-panel-primary {
-    background:
-        radial-gradient(circle at top left, rgba(165, 180, 252, 0.24), transparent 18rem),
-        linear-gradient(180deg, #4338ca 0%, #312e81 100%);
+    background: #ea580c;
     color: #fff;
 }
 
@@ -144,7 +150,7 @@ a {
 }
 
 .auth-benefits i {
-    color: #c7d2fe;
+    color: #fed7aa;
 }
 
 .feature-icon {
@@ -154,7 +160,7 @@ a {
     align-items: center;
     justify-content: center;
     border-radius: 14px;
-    background: rgba(99, 102, 241, 0.1);
+    background: rgba(249, 115, 22, 0.1);
     color: var(--ia-primary-dark);
     font-size: 1.2rem;
 }
@@ -166,7 +172,7 @@ a {
     border-radius: 1.25rem;
     padding: 1.15rem 1.2rem;
     height: 100%;
-    box-shadow: 0 12px 26px rgba(15, 23, 42, 0.04);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
 }
 
 .metric-label {
@@ -216,8 +222,8 @@ a {
 }
 
 .status-pending {
-    color: #92400e;
-    background: #fef3c7;
+    color: #9a3412;
+    background: #ffedd5;
 }
 
 .status-failed {
@@ -234,19 +240,9 @@ a {
 .change-chip {
     padding: 0.45rem 0.7rem;
     border-radius: 999px;
-    background: #eef2ff;
+    background: #ffedd5;
     color: var(--ia-primary-dark);
     font-size: 0.85rem;
-}
-
-.task-status-panel {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 0.85rem 1rem;
-    border-radius: 1rem;
-    background: #eff6ff;
-    color: #1d4ed8;
 }
 
 .empty-illustration {
@@ -256,7 +252,7 @@ a {
     align-items: center;
     justify-content: center;
     border-radius: 1.5rem;
-    background: #eef2ff;
+    background: #ffedd5;
     color: var(--ia-primary-dark);
     font-size: 2rem;
 }
@@ -324,6 +320,59 @@ a {
 @keyframes spin {
     from { transform: rotate(0deg); }
     to { transform: rotate(360deg); }
+}
+
+/* Agent Full-Screen Loading Overlay */
+#agent-loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(255, 251, 240, 0.85); /* Matches cream bg with opacity */
+    backdrop-filter: blur(8px);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+}
+
+#agent-loading-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.loader-card {
+    background: #ffffff;
+    padding: 3rem 4rem;
+    border-radius: 1.5rem;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
+    text-align: center;
+    border: 1px solid var(--ia-border);
+    max-width: 400px;
+}
+
+.loader-spinner {
+    font-size: 3rem;
+    color: var(--ia-primary);
+    margin-bottom: 1rem;
+    display: inline-block;
+    animation: spin 1s linear infinite;
+}
+
+.loader-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--ia-text);
+    margin-bottom: 0.5rem;
+}
+
+.loader-subtitle {
+    font-size: 0.95rem;
+    color: var(--ia-muted);
 }
 
 @media (max-width: 991.98px) {

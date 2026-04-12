@@ -44,6 +44,7 @@ def dashboard(request: HttpRequest) -> HttpResponse:
         .annotate(
             briefing_count=Count("briefings", distinct=True),
             snapshot_count=Count("snapshots", distinct=True),
+            discovered_count=Count("discovered_pages", distinct=True),
             last_briefing_preview=Subquery(last_briefing_preview),
             last_briefing_diff=Subquery(last_briefing_diff),
         )
@@ -119,6 +120,7 @@ def competitor_detail(request: HttpRequest, pk: int) -> HttpResponse:
         Competitor.objects.filter(user=request.user).prefetch_related(
             Prefetch("briefings", queryset=Briefing.objects.filter(user=request.user).order_by("-created_at")),
             Prefetch("snapshots", queryset=CompetitorSnapshot.objects.order_by("-scraped_at")),
+            Prefetch("discovered_pages", queryset=DiscoveredPage.objects.all().order_by("page_type")),
         ),
         pk=pk,
     )
@@ -141,6 +143,7 @@ def competitor_detail(request: HttpRequest, pk: int) -> HttpResponse:
         "competitor": competitor,
         "snapshots": snapshots,
         "briefings": briefings,
+        "discovered_pages": competitor.discovered_pages.all(),
         "latest_snapshot": latest_snapshot,
         "previous_snapshot": previous_snapshot,
         "recent_changes": recent_changes,

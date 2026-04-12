@@ -1,48 +1,204 @@
 {% extends 'base.html' %}
 {% block title %}Briefing{% endblock %}
-{% block content %}
-<div class="mb-3">
-    <a href="{% url 'briefings:list' %}" class="text-decoration-none"><i class="bi bi-arrow-left me-1"></i>Back to briefings</a>
-</div>
+{% block page_title %}{{ briefing.competitor.name }} Briefing{% endblock %}
 
-<div class="row g-4">
-    <div class="col-lg-8">
-        <div class="card shadow-sm border-0">
-            <div class="card-body p-4 p-lg-5">
-                <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
-                    <div>
-                        <span class="eyebrow mb-2 d-inline-flex">Strategic briefing</span>
-                        <h1 class="display-6 fw-bold mb-1">{{ briefing.competitor.name }} briefing</h1>
-                        <p class="text-secondary mb-0">{{ briefing.created_at|date:"d M Y, H:i" }}</p>
-                    </div>
-                    <span class="badge text-bg-light">{{ briefing.word_count }} words</span>
-                </div>
-                <div class="briefing-content">{{ rendered_content|safe }}</div>
+{% block topbar_actions %}
+<a href="{% url 'briefings:list' %}" class="btn btn-secondary">
+    <i class="bi bi-arrow-left"></i> Back to library
+</a>
+{% endblock %}
+
+{% block content %}
+<style>
+    .detail-layout {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 32px;
+    }
+    @media (min-width: 992px) {
+        .detail-layout { grid-template-columns: 7fr 3fr; }
+    }
+
+    .briefing-paper {
+        background: var(--bg-secondary);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 32px;
+    }
+    @media (min-width: 768px) {
+        .briefing-paper { padding: 48px; }
+    }
+
+    .briefing-content {
+        font-size: 15px;
+        line-height: 1.7;
+        color: var(--text-primary);
+    }
+
+    .briefing-content h2 {
+        font-family: 'Newsreader', serif;
+        font-size: 22px;
+        color: #fff;
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 8px;
+        margin-bottom: 20px;
+        margin-top: 40px;
+        letter-spacing: -0.01em;
+    }
+
+    .briefing-content h2:first-child {
+        margin-top: 0;
+    }
+    
+    .briefing-content p {
+        margin-bottom: 20px;
+        color: rgba(255, 255, 255, 0.85);
+    }
+
+    .briefing-content ul {
+        list-style: none;
+        padding-left: 0;
+        margin-bottom: 24px;
+    }
+
+    .briefing-content ul li {
+        position: relative;
+        padding-left: 24px;
+        margin-bottom: 12px;
+        color: rgba(255, 255, 255, 0.85);
+    }
+
+    .briefing-content ul li::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 8px;
+        width: 6px;
+        height: 6px;
+        background-color: var(--accent);
+        border-radius: 50%;
+        box-shadow: 0 0 8px rgba(217, 119, 6, 0.5);
+    }
+
+    .meta-card {
+        background: var(--bg-secondary);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 24px;
+        margin-bottom: 24px;
+    }
+
+    .meta-card h3 {
+        font-size: 14px;
+        text-transform: uppercase;
+        color: var(--text-secondary);
+        letter-spacing: 0.5px;
+        margin-bottom: 20px;
+    }
+
+    .meta-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 16px;
+        border-bottom: 1px solid var(--bg-tertiary);
+        padding-bottom: 16px;
+    }
+    .meta-row:last-child {
+        border-bottom: none;
+        margin-bottom: 0;
+        padding-bottom: 0;
+    }
+    .meta-label { color: var(--text-secondary); font-size: 13px; }
+    .meta-value { color: var(--text-primary); font-size: 13px; font-weight: 500; text-align: right;}
+    
+    .diff-pre {
+        background: #111;
+        border: 1px solid var(--bg-tertiary);
+        color: #a0a0a0;
+        padding: 16px;
+        border-radius: 8px;
+        font-family: monospace;
+        font-size: 12px;
+        overflow-x: auto;
+        line-height: 1.5;
+        white-space: pre-wrap;
+    }
+</style>
+
+<div class="detail-layout">
+    <div class="left-col slide-up stagger-1">
+        <div class="briefing-paper shadow-sm">
+            <div style="margin-bottom: 32px;">
+                <span class="badge badge-neutral mb-2" style="background: rgba(217, 119, 6, 0.1); color: var(--accent);">{{ briefing.created_at|date:"M d, Y" }}</span>
+                <h1 class="font-newsreader" style="font-size: 36px; line-height: 1.2; margin: 0;">Strategic Intelligence Brief</h1>
+            </div>
+            <div class="briefing-content">
+                {{ rendered_content|safe }}
             </div>
         </div>
     </div>
-    <div class="col-lg-4">
-        <div class="card shadow-sm border-0">
-            <div class="card-body p-4">
-                <h2 class="h5">Meta</h2>
-                <p><strong>Competitor:</strong> <a href="{% url 'competitors:detail' briefing.competitor.pk %}">{{ briefing.competitor.name }}</a></p>
-                <p><strong>Created:</strong> {{ briefing.created_at }}</p>
-                <p><strong>Word count:</strong> {{ briefing.word_count }}</p>
-                <p><strong>Changes detected:</strong> {{ briefing.changes_detected_count }}</p>
-                <form method="post" action="{% url 'agent:run' briefing.competitor.pk %}">
-                    {% csrf_token %}
-                    <button class="btn btn-primary w-100" type="submit">Run agent again</button>
-                </form>
+    
+    <div class="right-col slide-up stagger-2">
+        <div class="meta-card shadow-sm">
+            <h3>Metadata</h3>
+            <div class="meta-row">
+                <span class="meta-label">Target</span>
+                <a class="meta-value font-newsreader" style="font-size:15px; color: var(--accent);" href="{% url 'competitors:detail' briefing.competitor.pk %}">{{ briefing.competitor.name }}</a>
             </div>
+            <div class="meta-row">
+                <span class="meta-label">Timestamp</span>
+                <span class="meta-value">{{ briefing.created_at|date:"H:i A" }}<br><span style="color:var(--text-secondary);font-weight:normal;">{{ briefing.created_at|date:"M d, Y" }}</span></span>
+            </div>
+            <div class="meta-row">
+                <span class="meta-label">Length</span>
+                <span class="meta-value">{{ briefing.word_count }} words</span>
+            </div>
+            <div class="meta-row">
+                <span class="meta-label">Delta Volume</span>
+                <span class="meta-value">{{ briefing.changes_detected_count }} lines</span>
+            </div>
+            
+            <form method="post" action="{% url 'agent:run' briefing.competitor.pk %}" style="margin-top:24px;">
+                {% csrf_token %}
+                <button class="btn btn-primary btn-block" type="submit"><i class="bi bi-arrow-repeat me-1"></i> Rescan Target</button>
+            </form>
         </div>
+
         {% if briefing.changes_detected %}
-            <div class="card shadow-sm border-0 mt-4">
-                <div class="card-body p-4">
-                    <h2 class="h5">Diff</h2>
-                    <pre class="small mb-0">{{ briefing.changes_detected }}</pre>
-                </div>
+            <div class="meta-card shadow-sm">
+                <h3>Raw Diff Capture</h3>
+                <pre class="diff-pre">{{ briefing.changes_detected }}</pre>
             </div>
         {% endif %}
     </div>
 </div>
+
+{% if previous_snapshot and previous_snapshot.screenshot or briefing.snapshot and briefing.snapshot.screenshot %}
+<div class="meta-card shadow-sm slide-up stagger-3" style="margin-top: 32px;">
+    <h3 style="margin-bottom: 24px;"><i class="bi bi-image me-2"></i> Visual Diff</h3>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+        <div>
+            <h4 style="font-size: 13px; color: var(--text-secondary); margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Previous Scan</h4>
+            {% if previous_snapshot and previous_snapshot.screenshot %}
+                <a href="{{ previous_snapshot.screenshot.url }}" target="_blank">
+                    <img src="{{ previous_snapshot.screenshot.url }}" style="width: 100%; height: auto; border: 1px solid var(--border); border-radius: 8px; transition: transform 0.2s ease;">
+                </a>
+            {% else %}
+                <div style="padding: 48px; text-align: center; border: 1px dashed var(--border); border-radius: 8px; color: var(--text-muted);">No previous screenshot</div>
+            {% endif %}
+        </div>
+        <div>
+            <h4 style="font-size: 13px; color: var(--text-secondary); margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Current Scan</h4>
+            {% if briefing.snapshot and briefing.snapshot.screenshot %}
+                <a href="{{ briefing.snapshot.screenshot.url }}" target="_blank">
+                    <img src="{{ briefing.snapshot.screenshot.url }}" style="width: 100%; height: auto; border: 1px solid var(--border); border-radius: 8px; transition: transform 0.2s ease;">
+                </a>
+            {% else %}
+                <div style="padding: 48px; text-align: center; border: 1px dashed var(--border); border-radius: 8px; color: var(--text-muted);">No current screenshot</div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
 {% endblock %}

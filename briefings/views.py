@@ -2,10 +2,11 @@ import markdown
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.http import HttpRequest, HttpResponse
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404, render, redirect
 
-from briefings.models import Briefing
+from briefings.models import Briefing, SwotReport
 from competitors.models import Competitor
+from agent.swot import generate_swot_analysis
 
 
 @login_required
@@ -39,11 +40,37 @@ def briefing_detail(request: HttpRequest, pk: int) -> HttpResponse:
         pk=pk,
     )
     rendered_content = markdown.markdown(briefing.content, extensions=["extra"])
+    previous_snapshot = None
+    if briefing.snapshot:
+        previous_snapshot = briefing.competitor.snapshots.filter(scraped_at__lt=briefing.snapshot.scraped_at).order_by("-scraped_at").first()
+
     return render(
         request,
         "briefings/detail.html",
         {
             "briefing": briefing,
             "rendered_content": rendered_content,
+            "previous_snapshot": previous_snapshot,
         },
     )
+
+
+@login_required
+def swot_view(request: HttpRequest) -> HttpResponse:
+    """Show the latest SWOT analysis or generate a new one."""
+    if request.method == "POST":
+        generate_swot_analysis(request.user)
+        return redirect("briefings:swot")
+        
+    latest_swot = SwotReport.objects.filter(user=request.user).first()
+    
+    # Auto-generate if none exists
+    if not latest_swot:
+        latest_swot = generate_swot_analysis(request.user)
+        
+    return render(
+        request, 
+        "briefings/swot.html", 
+        {"swot": latest_swot}
+    )
+

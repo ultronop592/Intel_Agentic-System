@@ -1,69 +1,201 @@
 {% extends 'base.html' %}
 {% block title %}Briefings{% endblock %}
+{% block page_title %}Briefings{% endblock %}
+
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-        <span class="eyebrow mb-2 d-inline-flex">Briefing library</span>
-        <h1 class="display-6 fw-bold mb-1">Briefings</h1>
-        <p class="text-secondary mb-0">{{ total_count }} total briefings</p>
-    </div>
+<style>
+    .filter-card {
+        background-color: var(--bg-secondary);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 32px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+    @media (min-width: 768px) {
+        .filter-card {
+            flex-direction: row;
+            align-items: flex-end;
+        }
+        .filter-input { flex: 1; }
+        .filter-action { width: 160px; }
+    }
+    
+    .briefing-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 24px;
+    }
+    @media (min-width: 768px) {
+        .briefing-grid { grid-template-columns: 1fr 1fr; }
+    }
+    
+    .briefing-card {
+        background: var(--bg-secondary);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 24px;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        transition: transform 0.2s ease, border-color 0.2s ease;
+        position: relative;
+        overflow: hidden;
+    }
+    .briefing-card:hover {
+        border-color: var(--text-tertiary);
+        transform: translateY(-2px);
+    }
+    .briefing-card::before {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; right: 0; height: 3px;
+        background-color: var(--text-tertiary);
+        opacity: 0.15;
+    }
+    
+    .briefing-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 12px;
+    }
+    
+    .comp-label {
+        color: var(--accent);
+        font-size: 11px;
+        text-transform: uppercase;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+        margin-bottom: 4px;
+        display: block;
+    }
+    
+    .briefing-date {
+        font-size: 12px;
+        color: var(--text-tertiary);
+        margin-bottom: 12px;
+    }
+    
+    .preview-text {
+        color: var(--text-secondary);
+        font-size: 13px;
+        line-height: 1.6;
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        margin-bottom: 24px;
+        flex: 1;
+    }
+    
+    .briefing-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-top: 1px solid var(--border);
+        padding-top: 16px;
+        margin-top: auto;
+    }
+    
+    .read-link {
+        font-weight: 500;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .pagination-wrapper {
+        display: flex;
+        justify-content: center;
+        margin-top: 48px;
+        gap: 8px;
+    }
+
+    .page-btn {
+        padding: 8px 14px;
+        border: 1px solid var(--border);
+        background: var(--bg-tertiary);
+        color: var(--text-primary);
+        border-radius: 8px;
+        text-decoration: none;
+        font-size: 13px;
+    }
+    .page-btn:hover {
+        background: var(--bg-hover);
+    }
+    .page-btn.active {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: #fff;
+    }
+</style>
+
+<div class="d-flex justify-content-between align-items-center mb-4 fade-in stagger-1">
+    <p class="text-secondary m-0" style="font-size: 16px;">{{ total_count }} total briefings stored in library</p>
 </div>
 
-<form method="get" class="card card-body shadow-sm border-0 mb-4">
-    <label for="competitor" class="form-label">Filter by competitor</label>
-    <div class="row g-2">
-        <div class="col-md-6">
-            <select name="competitor" id="competitor" class="form-select">
-                <option value="">All competitors</option>
-                {% for competitor in competitors %}
-                    <option value="{{ competitor.id }}" {% if selected_competitor == competitor.id|stringformat:'s' %}selected{% endif %}>{{ competitor.name }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        <div class="col-md-3">
-            <button class="btn btn-primary w-100" type="submit">Apply filter</button>
-        </div>
+<form method="get" class="filter-card slide-up stagger-1">
+    <div class="filter-input">
+        <label for="competitor">Filter by competitor</label>
+        <select name="competitor" id="competitor">
+            <option value="">All competitors</option>
+            {% for competitor in competitors %}
+                <option value="{{ competitor.id }}" {% if selected_competitor == competitor.id|stringformat:'s' %}selected{% endif %}>{{ competitor.name }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="filter-action">
+        <button class="btn btn-secondary btn-block" type="submit">Filter library</button>
     </div>
 </form>
 
-<div class="row g-4">
+<div class="briefing-grid">
     {% for briefing in page_obj %}
-        <div class="col-md-6">
-            <div class="card shadow-sm border-0 h-100">
-                <div class="card-body p-4">
-                    <div class="d-flex justify-content-between align-items-start mb-2">
-                        <h2 class="h5 mb-0">{{ briefing.competitor.name }}</h2>
-                        <span class="badge text-bg-light">{{ briefing.word_count }} words</span>
-                    </div>
-                    <p class="small text-secondary">{{ briefing.created_at }}</p>
-                    <p>{{ briefing.preview }}</p>
-                    <div class="change-highlight-list mb-3">
-                        <span class="change-chip">{{ briefing.changes_detected_count }} changes captured</span>
-                    </div>
-                    <a href="{% url 'briefings:detail' briefing.pk %}">Read full briefing</a>
+        <div class="briefing-card slide-up stagger-2">
+            <div class="briefing-header">
+                <div>
+                    <span class="comp-label">{{ briefing.competitor.name }}</span>
+                    <h3 class="font-newsreader" style="font-size: 18px; margin: 0;">Weekly Brief</h3>
                 </div>
+                <span class="badge badge-neutral">{{ briefing.word_count }} words</span>
+            </div>
+            
+            <div class="briefing-date">{{ briefing.created_at|date:"M d, Y - H:i" }}</div>
+            
+            <div class="preview-text">
+                {{ briefing.preview }}
+            </div>
+            
+            <div class="briefing-footer">
+                <span class="badge badge-neutral">{{ briefing.changes_detected_count }} changes</span>
+                <a class="read-link" href="{% url 'briefings:detail' briefing.pk %}">Read full <i class="bi bi-arrow-right"></i></a>
             </div>
         </div>
     {% empty %}
-        <div class="col-12">
-            <div class="card shadow-sm">
-                <div class="card-body py-5 text-center text-secondary">No briefings yet. Run an agent on a competitor to generate one.</div>
+        <div style="grid-column: 1 / -1;">
+            <div class="card" style="text-align: center; padding: 64px 24px;">
+                <i class="bi bi-file-earmark-x" style="font-size: 32px; color: var(--text-tertiary); margin-bottom: 16px; display: block;"></i>
+                <h4>No briefings found</h4>
+                <p class="text-muted mb-0">Run an agent from the dashboard to generate your first strategic intelligence brief.</p>
             </div>
         </div>
     {% endfor %}
 </div>
 
 {% if page_obj.paginator.num_pages > 1 %}
-    <nav class="mt-4">
-        <ul class="pagination">
-            {% if page_obj.has_previous %}
-                <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if selected_competitor %}&competitor={{ selected_competitor }}{% endif %}">Previous</a></li>
-            {% endif %}
-            <li class="page-item active"><span class="page-link">{{ page_obj.number }}</span></li>
-            {% if page_obj.has_next %}
-                <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}{% if selected_competitor %}&competitor={{ selected_competitor }}{% endif %}">Next</a></li>
-            {% endif %}
-        </ul>
-    </nav>
+    <div class="pagination-wrapper">
+        {% if page_obj.has_previous %}
+            <a class="page-btn" href="?page={{ page_obj.previous_page_number }}{% if selected_competitor %}&competitor={{ selected_competitor }}{% endif %}">Previous</a>
+        {% endif %}
+        
+        <span class="page-btn active">{{ page_obj.number }}</span>
+        
+        {% if page_obj.has_next %}
+            <a class="page-btn" href="?page={{ page_obj.next_page_number }}{% if selected_competitor %}&competitor={{ selected_competitor }}{% endif %}">Next</a>
+        {% endif %}
+    </div>
 {% endif %}
 {% endblock %}

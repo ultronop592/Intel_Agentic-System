@@ -7,7 +7,7 @@ from django.utils import timezone
 
 from agent.graph import build_graph
 from briefings.models import Briefing
-from competitors.models import Competitor, CompetitorSnapshot
+from competitors.models import Competitor, CompetitorSnapshot, DiscoveredPage
 
 logger = logging.getLogger(__name__)
 
@@ -18,6 +18,8 @@ def _lock_key(competitor_id: int) -> str:
 
 @shared_task(bind=True, max_retries=3)
 def run_agent_for_competitor(self, competitor_id: int) -> dict:
+    logger.info(f"Agent started for competitor {competitor_id}")
+    
     lock_key = _lock_key(competitor_id)
     lock_acquired = cache.add(lock_key, "1", timeout=900)
     if not lock_acquired:
@@ -44,6 +46,7 @@ def run_agent_for_competitor(self, competitor_id: int) -> dict:
             "error": None,
         }
         result = build_graph().invoke(state)
+        logger.info(f"Graph result: {result}")
 
         if result.get("error"):
             competitor.last_status = Competitor.STATUS_FAILED
@@ -63,10 +66,12 @@ def run_agent_for_competitor(self, competitor_id: int) -> dict:
                     competitor=competitor,
                     raw_text=clean_text,
                     content_hash=content_hash,
+                    screenshot=result["scraped_data"].get("screenshot_path", ""),
                 )
 
         briefing_id = None
-        if result.get("has_changes"):
+        # Save Briefing even if has_changes is None (treat None as True)
+        if result.get("has_changes") is not False:
             briefing = Briefing.objects.create(
                 user=competitor.user,
                 competitor=competitor,
@@ -76,6 +81,16 @@ def run_agent_for_competitor(self, competitor_id: int) -> dict:
                 status=Briefing.STATUS_COMPLETED,
             )
             briefing_id = briefing.id
+            print(f"Saved briefing with pk: {briefing.pk}")
+
+        # Save discovered pages
+        discovered_data = result.get("discovered_pages", [])
+        for page in discovered_data:
+            DiscoveredPage.objects.get_or_create(
+                competitor=competitor,
+                url=page["url"],
+                defaults={"page_type": page["type"]}
+            )
 
         competitor.last_scraped = timezone.now()
         competitor.last_status = Competitor.STATUS_SUCCESS

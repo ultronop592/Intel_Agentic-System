@@ -37,6 +37,7 @@ class CompetitorSnapshot(models.Model):
     competitor = models.ForeignKey(Competitor, on_delete=models.CASCADE, related_name="snapshots")
     raw_text = models.TextField()
     content_hash = models.CharField(max_length=64)
+    screenshot = models.ImageField(upload_to="screenshots/", blank=True, null=True)
     scraped_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -55,3 +56,28 @@ class CompetitorSnapshot(models.Model):
     @staticmethod
     def generate_hash(text: str) -> str:
         return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
+class DiscoveredPage(models.Model):
+    PAGE_TYPE_CHOICES = (
+        ("pricing", "Pricing"),
+        ("features", "Features"),
+        ("blog", "Blog"),
+        ("about", "About"),
+        ("careers", "Careers"),
+        ("product", "Product"),
+        ("other", "Other"),
+    )
+
+    competitor = models.ForeignKey(Competitor, on_delete=models.CASCADE, related_name="discovered_pages")
+    url = models.URLField()
+    page_type = models.CharField(max_length=20, choices=PAGE_TYPE_CHOICES, default="other")
+    is_tracked = models.BooleanField(default=False)
+    discovered_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ("competitor", "url")
+        ordering = ("-discovered_at",)
+
+    def __str__(self) -> str:
+        return f"{self.competitor.name} - {self.page_type}: {self.url}"

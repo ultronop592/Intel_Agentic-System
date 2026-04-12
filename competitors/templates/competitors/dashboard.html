@@ -1,247 +1,410 @@
 {% extends 'base.html' %}
 {% block title %}Competitors{% endblock %}
-{% block extra_head %}
-<meta name="description" content="Competitor dashboard with watchlist activity, change summaries, and run status.">
-{% endblock %}
-{% block content %}
-<section class="hero-surface rounded-4 p-4 p-lg-5 mb-4">
-    <div class="row align-items-center g-4">
-        <div class="col-lg-7">
-            <span class="eyebrow mb-3 d-inline-flex">Portfolio command center</span>
-            <h1 class="display-6 fw-bold mb-2">My Competitors</h1>
-            <p class="text-secondary mb-0">Launch scans, review recent change pulses, and keep your watchlist organized in one place.</p>
-        </div>
-        <div class="col-lg-5">
-            <div class="card border-0 shadow-sm">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <span class="small text-uppercase text-secondary">Briefing activity</span>
-                        <span class="badge text-bg-light">Last 7 days</span>
-                    </div>
-                    <canvas id="briefingTrendChart" height="120"></canvas>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
+{% block page_title %}My Competitors{% endblock %}
 
-<div class="row g-3 mb-4">
-    <div class="col-sm-6 col-xl-3">
-        <div class="metric-card">
-            <div class="metric-label">Competitors</div>
-            <div class="metric-value">{{ total_competitors_count }}</div>
-            <div class="metric-foot">Watchlist size</div>
-        </div>
+{% block content %}
+<style>
+    .dashboard-header {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 24px;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 24px;
+    }
+    
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(1, 1fr);
+        gap: 16px;
+        margin-bottom: 32px;
+    }
+    @media (min-width: 768px) {
+        .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (min-width: 1024px) {
+        .stats-grid { grid-template-columns: repeat(4, 1fr); }
+    }
+
+    .stat-card {
+        background-color: var(--bg-secondary);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 20px;
+        transition: transform 0.2s ease, border-color 0.2s ease;
+        position: relative;
+        overflow: hidden;
+    }
+    .stat-card:hover {
+        transform: translateY(-2px);
+        border-color: var(--text-tertiary);
+    }
+    .stat-card::before {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; bottom: 0; width: 3px;
+        background-color: var(--text-tertiary);
+        opacity: 0.3;
+    }
+    .stat-val {
+        font-size: 28px;
+        font-weight: 700;
+        color: #fff;
+        line-height: 1.2;
+        margin: 8px 0;
+    }
+    .stat-label {
+        font-size: 13px;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .stat-sub {
+        font-size: 12px;
+        color: var(--text-tertiary);
+    }
+
+    .add-form-wrapper {
+        margin-bottom: 32px;
+    }
+    .add-form-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        cursor: pointer;
+    }
+    .add-form-body {
+        margin-top: 16px;
+        display: none;
+    }
+    .add-form-body.active {
+        display: block;
+    }
+    .toggle-icon {
+        transition: transform 0.3s ease;
+        color: var(--text-secondary);
+    }
+    .toggle-icon.open {
+        transform: rotate(180deg);
+    }
+    .form-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+    @media (min-width: 768px) {
+        .form-grid { grid-template-columns: 1fr 1fr; }
+        .form-full { grid-column: span 2; }
+    }
+
+    .comp-card {
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+        margin-bottom: 16px;
+        transition: transform 0.2s ease, border-color 0.2s ease;
+    }
+    .comp-card:hover {
+        border-color: var(--text-tertiary);
+    }
+    @media (min-width: 992px) {
+        .comp-card {
+            flex-direction: row;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+    }
+    .comp-left {
+        flex: 1;
+    }
+    .comp-right {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+    }
+    @media (min-width: 992px) {
+        .comp-right {
+            align-items: flex-end;
+            min-width: 300px;
+        }
+    }
+    
+    .comp-title-row {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-bottom: 4px;
+    }
+    
+    .comp-title {
+        font-size: 18px;
+        margin: 0;
+    }
+    
+    .comp-url {
+        font-size: 13px;
+        color: var(--text-secondary);
+        display: inline-block;
+        margin-bottom: 12px;
+    }
+
+    .comp-stats {
+        display: flex;
+        gap: 24px;
+        font-size: 13px;
+        color: var(--text-secondary);
+    }
+    .comp-stats strong {
+        color: var(--text-primary);
+        font-size: 14px;
+    }
+    
+    .chart-container {
+        position: relative;
+        height: 120px;
+        width: 100%;
+        margin-bottom: 32px;
+        background: var(--bg-secondary);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 16px;
+    }
+    .chart-header {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 8px;
+    }
+    
+    .btn-group {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    
+    /* Task loader panel */
+    .task-status-panel {
+        background: rgba(217, 119, 6, 0.1);
+        border: 1px solid rgba(217, 119, 6, 0.2);
+        color: var(--accent);
+        padding: 12px 16px;
+        border-radius: 8px;
+        font-size: 13px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-top: 16px;
+    }
+    .spin {
+        animation: spin 1.5s linear infinite;
+    }
+</style>
+
+<div class="chart-container fade-in stagger-1">
+    <div class="chart-header">
+        <span class="text-tiny text-muted">BRIEFING ACTIVITY</span>
+        <span class="badge badge-neutral">LAST 7 DAYS</span>
     </div>
-    <div class="col-sm-6 col-xl-3">
-        <div class="metric-card">
-            <div class="metric-label">Briefings</div>
-            <div class="metric-value">{{ total_briefings_count }}</div>
-            <div class="metric-foot">Strategic reports created</div>
-        </div>
-    </div>
-    <div class="col-sm-6 col-xl-3">
-        <div class="metric-card">
-            <div class="metric-label">Snapshots</div>
-            <div class="metric-value">{{ total_snapshots_count }}</div>
-            <div class="metric-foot">Crawl history saved</div>
-        </div>
-    </div>
-    <div class="col-sm-6 col-xl-3">
-        <div class="metric-card">
-            <div class="metric-label">Last run</div>
-            <div class="metric-value metric-date">{{ last_run_time|default:"Never" }}</div>
-            <div class="metric-foot">{{ failed_count }} failed, {{ pending_count }} pending</div>
-        </div>
+    <div style="height: 70px;">
+        <canvas id="briefingTrendChart"></canvas>
     </div>
 </div>
 
-<div class="card border-0 shadow-sm mb-4">
-    <div class="card-body p-4">
-        <h2 class="h5 mb-3">Add competitor</h2>
-        <form method="post" class="row g-3">
+<div class="stats-grid">
+    <div class="stat-card slide-up stagger-1">
+        <div class="stat-label">Competitors</div>
+        <div class="stat-val font-newsreader">{{ total_competitors_count }}</div>
+        <div class="stat-sub">Watchlist size</div>
+    </div>
+    <div class="stat-card slide-up stagger-2">
+        <div class="stat-label">Briefings</div>
+        <div class="stat-val font-newsreader">{{ total_briefings_count }}</div>
+        <div class="stat-sub">Strategic reports created</div>
+    </div>
+    <div class="stat-card slide-up stagger-3">
+        <div class="stat-label">Snapshots</div>
+        <div class="stat-val font-newsreader">{{ total_snapshots_count }}</div>
+        <div class="stat-sub">Crawl history saved</div>
+    </div>
+    <div class="stat-card slide-up stagger-4">
+        <div class="stat-label">Last scan</div>
+        <div class="stat-val font-newsreader" style="font-size: 18px; margin-top:16px;">{{ last_run_time|default:"Never" }}</div>
+        <div class="stat-sub">{{ failed_count }} failed, {{ pending_count }} pending</div>
+    </div>
+</div>
+
+<div class="card add-form-wrapper">
+    <div class="add-form-header" id="toggleAddForm">
+        <h2 class="h5 m-0" style="color:var(--text-primary);">Add competitor</h2>
+        <i class="bi bi-chevron-down toggle-icon" id="addFormIcon"></i>
+    </div>
+    <div class="add-form-body" id="addFormBody">
+        <form method="post" class="form-grid">
             {% csrf_token %}
-            <div class="col-md-6">
-                <label class="form-label" for="{{ form.name.id_for_label }}">Name</label>
+            <div>
+                <label for="{{ form.name.id_for_label }}">Name</label>
                 {{ form.name }}
             </div>
-            <div class="col-md-6">
-                <label class="form-label" for="{{ form.url.id_for_label }}">Website URL</label>
+            <div>
+                <label for="{{ form.url.id_for_label }}">Website URL</label>
                 {{ form.url }}
             </div>
-            <div class="col-12">
-                <label class="form-label" for="{{ form.description.id_for_label }}">Notes</label>
+            <div class="form-full">
+                <label for="{{ form.description.id_for_label }}">Notes</label>
                 {{ form.description }}
             </div>
-            <div class="col-12">
-                <div class="form-check">
-                    {{ form.is_active }}
-                    <label class="form-check-label" for="{{ form.is_active.id_for_label }}">Track this competitor immediately</label>
-                </div>
+            <div class="form-full checkbox-group">
+                {{ form.is_active }}
+                <label for="{{ form.is_active.id_for_label }}">Track this competitor immediately</label>
             </div>
-            <div class="col-12">
+            <div class="form-full">
                 <button type="submit" class="btn btn-primary">Save competitor</button>
             </div>
         </form>
     </div>
 </div>
 
-<div class="row g-4">
+<div class="comp-list">
     {% for row in competitors %}
         {% with competitor=row.instance %}
-            <div class="col-12">
-                <div class="card border-0 shadow-sm competitor-card" {% if task_polling_enabled and competitor.current_task_id %}data-task-id="{{ competitor.current_task_id }}"{% endif %}>
-                    <div class="card-body p-4">
-                        <div class="d-flex flex-wrap justify-content-between gap-3">
-                            <div>
-                                <div class="d-flex align-items-center gap-2 flex-wrap">
-                                    <h2 class="h4 mb-0">{{ competitor.name }}</h2>
-                                    <span class="status-pill status-{{ competitor.last_status }}" data-status-text>{{ competitor.get_last_status_display }}</span>
-                                    {% if task_polling_enabled and competitor.current_task_id %}
-                                        <span class="status-pill status-pending">Agent running</span>
-                                    {% endif %}
-                                </div>
-                                <a class="small text-secondary text-break" href="{{ competitor.url }}" target="_blank" rel="noopener">{{ competitor.url }}</a>
-                                {% if competitor.description %}
-                                    <p class="text-secondary mt-3 mb-0">{{ competitor.description }}</p>
-                                {% endif %}
-                            </div>
-                            <div class="text-lg-end">
-                                <div class="small text-secondary">Last scraped</div>
-                                <div class="fw-semibold">{{ competitor.last_scraped|default:"Never" }}</div>
-                            </div>
-                        </div>
-
-                        <div class="row g-3 mt-2">
-                            <div class="col-md-3">
-                                <div class="mini-stat">
-                                    <span>Briefings</span>
-                                    <strong>{{ competitor.briefing_count }}</strong>
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="mini-stat">
-                                    <span>Snapshots</span>
-                                    <strong>{{ competitor.snapshot_count }}</strong>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="mini-stat">
-                                    <span>Latest summary</span>
-                                    <strong>{{ competitor.last_briefing_preview|default:"No briefings yet."|truncatechars:120 }}</strong>
-                                </div>
-                            </div>
-                        </div>
-
-                        {% if row.change_highlights %}
-                            <div class="change-highlight-list mt-4">
-                                {% for item in row.change_highlights %}
-                                    <span class="change-chip">{{ item }}</span>
-                                {% endfor %}
-                            </div>
-                        {% endif %}
-
-                        <div class="d-flex flex-wrap gap-2 mt-4">
-                            <form method="post" action="{% url 'agent:run' competitor.pk %}" class="d-inline">
-                                {% csrf_token %}
-                                <button class="btn btn-primary run-agent-button" type="submit"><i class="bi bi-stars me-1"></i>Run agent</button>
-                            </form>
-                            <a href="{% url 'competitors:detail' competitor.pk %}" class="btn btn-outline-secondary"><i class="bi bi-graph-up-arrow me-1"></i>View detail</a>
-                            <a href="{% url 'briefings:list' %}?competitor={{ competitor.pk }}" class="btn btn-outline-secondary"><i class="bi bi-file-earmark-text me-1"></i>View briefings</a>
-                            <form method="post" action="{% url 'competitors:delete' competitor.pk %}" class="d-inline">
-                                {% csrf_token %}
-                                <button class="btn btn-outline-danger" type="submit" onclick="return confirm('Delete this competitor?');"><i class="bi bi-trash3 me-1"></i>Delete</button>
-                            </form>
-                        </div>
-
+            <div class="card comp-card slide-up stagger-4" {% if task_polling_enabled and competitor.current_task_id %}data-task-id="{{ competitor.current_task_id }}"{% endif %}>
+                <div class="comp-left">
+                    <div class="comp-title-row">
+                        <h2 class="comp-title font-newsreader">{{ competitor.name }}</h2>
+                        <span class="badge {% if competitor.last_status == 'success' %}badge-success{% elif competitor.last_status == 'failed' %}badge-danger{% else %}badge-pending{% endif %}" data-status-text>
+                            {{ competitor.get_last_status_display }}
+                        </span>
                         {% if task_polling_enabled and competitor.current_task_id %}
-                            <div class="task-status-panel mt-3" data-task-panel>
-                                <i class="bi bi-arrow-repeat spin"></i>
-                                <span>Checking agent progress for this competitor...</span>
-                            </div>
+                            <span class="badge badge-pending">Running</span>
                         {% endif %}
+                    </div>
+                    <a class="comp-url" href="{{ competitor.url }}" target="_blank" rel="noopener">{{ competitor.url }}</a>
+                    
+                    {% if competitor.description %}
+                        <p class="text-muted" style="font-size: 13px;">{{ competitor.description }}</p>
+                    {% endif %}
+
+                    {% if row.change_highlights %}
+                        <div class="d-flex gap-2 flex-wrap mb-3">
+                            {% for item in row.change_highlights %}
+                                <span class="badge badge-neutral">{{ item }}</span>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    
+                    {% if task_polling_enabled and competitor.current_task_id %}
+                        <div class="task-status-panel" data-task-panel>
+                            <i class="bi bi-arrow-repeat spin"></i>
+                            <span>Fetching live updates...</span>
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="comp-right">
+                    <div style="text-align: right;">
+                        <span class="stat-label">LAST SCRAPED</span><br>
+                        <strong style="color:var(--text-primary);">{{ competitor.last_scraped|default:"Never" }}</strong>
+                    </div>
+                    
+                    <div class="comp-stats">
+                        <div>
+                            Briefings: <strong>{{ competitor.briefing_count }}</strong>
+                        </div>
+                        <div>
+                            Snapshots: <strong>{{ competitor.snapshot_count }}</strong>
+                        </div>
+                        <div>
+                            Discovered: <strong>{{ competitor.discovered_count }}</strong>
+                        </div>
+                    </div>
+                    
+                    <div class="btn-group">
+                        <form method="post" action="{% url 'agent:run' competitor.pk %}" style="margin:0;">
+                            {% csrf_token %}
+                            <button class="btn btn-primary" type="submit"><i class="bi bi-lightning-fill"></i> Run</button>
+                        </form>
+                        <a href="{% url 'competitors:detail' competitor.pk %}" class="btn btn-secondary">Meta</a>
+                        <a href="{% url 'briefings:list' %}?competitor={{ competitor.pk }}" class="btn btn-secondary">Briefings</a>
                     </div>
                 </div>
             </div>
         {% endwith %}
     {% empty %}
-        <div class="col-12">
-            <div class="card border-0 shadow-sm">
-                <div class="card-body text-center py-5">
-                    <div class="empty-illustration mx-auto mb-3"><i class="bi bi-binoculars"></i></div>
-                    <h2 class="h4">Add your first competitor</h2>
-                    <p class="text-secondary mb-0">Start with one website you care about and let the agent build your watchlist history.</p>
-                </div>
-            </div>
+        <div class="card" style="text-align: center; padding: 48px;">
+            <i class="bi bi-inboxes" style="font-size: 32px; color: var(--text-tertiary); margin-bottom: 16px; display: block;"></i>
+            <h3 style="margin-bottom: 8px;">No competitors tracked yet</h3>
+            <p class="text-muted">Fill out the form above to lock in your first target.</p>
         </div>
     {% endfor %}
 </div>
 {% endblock %}
+
 {% block extra_js %}
 <script>
-const trendCanvas = document.getElementById("briefingTrendChart");
-if (trendCanvas) {
-    new Chart(trendCanvas, {
-        type: "line",
-        data: {
-            labels: {{ trend_labels|safe }},
-            datasets: [{
-                data: {{ trend_values|safe }},
-                borderColor: "#6366f1",
-                backgroundColor: "rgba(99, 102, 241, 0.14)",
-                fill: true,
-                tension: 0.35,
-                pointRadius: 0
-            }]
-        },
-        options: {
-            plugins: { legend: { display: false } },
-            scales: {
-                x: { grid: { display: false } },
-                y: { beginAtZero: true, ticks: { precision: 0 } }
-            }
-        }
+    // Toggle Add form
+    document.getElementById('toggleAddForm').addEventListener('click', function() {
+        document.getElementById('addFormBody').classList.toggle('active');
+        document.getElementById('addFormIcon').classList.toggle('open');
     });
-}
 
-document.querySelectorAll("[data-task-id]").forEach((card) => {
-    const taskId = card.dataset.taskId;
-    const taskPanel = card.querySelector("[data-task-panel]");
-    const statusText = card.querySelector("[data-status-text]");
-    if (!taskId || !taskPanel) {
-        return;
+    // Chart
+    const trendCanvas = document.getElementById("briefingTrendChart");
+    if (trendCanvas) {
+        new Chart(trendCanvas, {
+            type: "line",
+            data: {
+                labels: {{ trend_labels|safe }},
+                datasets: [{
+                    data: {{ trend_values|safe }},
+                    borderColor: "#d97706",
+                    backgroundColor: "rgba(217, 119, 6, 0.1)",
+                    fill: true,
+                    tension: 0.35,
+                    pointRadius: 0,
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false }, tooltip: { mode: 'index', intersect: false } },
+                scales: {
+                    x: { display: false },
+                    y: { display: false, min: 0 }
+                },
+                layout: { padding: 0 }
+            }
+        });
     }
 
-    const poll = async () => {
-        try {
-            const response = await fetch(`/agent/status/${taskId}/`);
-            if (!response.ok) {
-                taskPanel.innerHTML = '<i class="bi bi-exclamation-circle"></i><span>Unable to fetch task status.</span>';
-                return;
-            }
-            const data = await response.json();
-            if (["success", "no_changes", "failed"].includes(data.status)) {
-                const messageMap = {
-                    success: "Agent finished and created a fresh briefing.",
-                    no_changes: "Agent finished. No significant changes were found.",
-                    failed: "Agent run failed. Please retry."
-                };
-                taskPanel.innerHTML = `<i class="bi bi-check-circle"></i><span>${messageMap[data.status]}</span>`;
-                if (statusText) {
-                    statusText.textContent = data.status === "failed" ? "Failed" : "Success";
-                    statusText.className = `status-pill ${data.status === "failed" ? "status-failed" : "status-success"}`;
-                }
-                setTimeout(() => window.location.reload(), 1000);
-                return;
-            }
-            taskPanel.innerHTML = '<i class="bi bi-arrow-repeat spin"></i><span>Agent is still running. Polling for updates.</span>';
-            setTimeout(poll, 2500);
-        } catch (error) {
-            taskPanel.innerHTML = '<i class="bi bi-exclamation-circle"></i><span>Network issue while polling task status.</span>';
-        }
-    };
+    // Polling logic
+    document.querySelectorAll("[data-task-id]").forEach((card) => {
+        const taskId = card.dataset.taskId;
+        const taskPanel = card.querySelector("[data-task-panel]");
+        const statusText = card.querySelector("[data-status-text]");
+        if (!taskId || !taskPanel) return;
 
-    poll();
-});
+        const poll = async () => {
+            try {
+                if (typeof showAgentLoader === 'function') showAgentLoader('Analysis in progress...');
+                const response = await fetch(`/agent/status/${taskId}/`);
+                if (!response.ok) throw new Error("Network response was not ok");
+                
+                const data = await response.json();
+                if (["success", "no_changes", "failed"].includes(data.status)) {
+                    if (typeof showAgentLoader === 'function') showAgentLoader('Finalizing...');
+                    taskPanel.innerHTML = '<i class="bi bi-check-circle"></i><span>Complete. Refreshing...</span>';
+                    setTimeout(() => window.location.reload(), 1000);
+                    return;
+                }
+                setTimeout(poll, 2500);
+            } catch (error) {
+                if (typeof hideAgentLoader === 'function') hideAgentLoader();
+                taskPanel.innerHTML = '<i class="bi bi-exclamation-triangle"></i><span>Status poll failed.</span>';
+            }
+        };
+        poll();
+    });
 </script>
 {% endblock %}
