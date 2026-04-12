@@ -1,0 +1,14 @@
+django==4.2.16
+psycopg2-binary==2.9.11
+python-dotenv==1.0.1
+celery==5.3.6
+redis==5.0.1
+langchain==0.3.0
+langchain-groq==0.2.0
+langgraph==0.2.76
+playwright==1.58.0
+beautifulsoup4==4.12.3
+gunicorn==21.2.0
+whitenoise==6.7.0
+markdown==3.6
+dj-database-url==2.2.0

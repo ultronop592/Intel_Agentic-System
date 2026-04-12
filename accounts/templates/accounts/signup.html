@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+{% block title %}Sign Up{% endblock %}
+{% block content %}
+<div class="row justify-content-center align-items-center min-vh-100 py-5">
+    <div class="col-lg-10">
+        <div class="row g-0 shadow-lg rounded-4 overflow-hidden auth-shell">
+            <div class="col-lg-6 auth-panel auth-panel-primary p-4 p-lg-5">
+                <span class="eyebrow mb-3 d-inline-flex">Start tracking smarter</span>
+                <h1 class="display-6 fw-bold mb-3">Create your IntelAgent workspace.</h1>
+                <p class="text-white-50 mb-4">Monitor competitor moves, save website history, and generate AI briefings without juggling spreadsheets and bookmarks.</p>
+                <div class="auth-benefits d-grid gap-3">
+                    <div><i class="bi bi-check2-circle me-2"></i>Track competitor pages and pricing changes</div>
+                    <div><i class="bi bi-check2-circle me-2"></i>See snapshot history and recent momentum</div>
+                    <div><i class="bi bi-check2-circle me-2"></i>Generate AI strategic briefings on demand</div>
+                </div>
+            </div>
+            <div class="col-lg-6 bg-white p-4 p-lg-5">
+                <div class="mb-4">
+                    <h2 class="h3 mb-1">Create your account</h2>
+                    <p class="text-secondary mb-0">Use a strong password with at least 8 characters.</p>
+                </div>
+
+                {% if form.non_field_errors %}
+                    <div class="alert alert-danger">
+                        {% for error in form.non_field_errors %}
+                            <div>{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label" for="{{ form.first_name.id_for_label }}">First name</label>
+                            {{ form.first_name }}
+                            {% for error in form.first_name.errors %}
+                                <div class="invalid-feedback d-block">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label" for="{{ form.username.id_for_label }}">Username</label>
+                            {{ form.username }}
+                            <div class="form-text">This is how you will log in.</div>
+                            {% for error in form.username.errors %}
+                                <div class="invalid-feedback d-block">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label" for="{{ form.email.id_for_label }}">Email</label>
+                            {{ form.email }}
+                            {% for error in form.email.errors %}
+                                <div class="invalid-feedback d-block">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label" for="{{ form.password1.id_for_label }}">Password</label>
+                            {{ form.password1 }}
+                            {% if form.password1.help_text %}
+                                <div class="form-text">{{ form.password1.help_text|safe }}</div>
+                            {% endif %}
+                            {% for error in form.password1.errors %}
+                                <div class="invalid-feedback d-block">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label" for="{{ form.password2.id_for_label }}">Confirm password</label>
+                            {{ form.password2 }}
+                            {% for error in form.password2.errors %}
+                                <div class="invalid-feedback d-block">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        <div class="col-12 pt-2">
+                            <button type="submit" class="btn btn-primary w-100 py-2">Create account</button>
+                        </div>
+                    </div>
+                </form>
+
+                <p class="mt-4 mb-0 text-secondary">Already have an account? <a href="{% url 'accounts:login' %}">Log in</a></p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

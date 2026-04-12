@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+{% block title %}Briefing{% endblock %}
+{% block content %}
+<div class="mb-3">
+    <a href="{% url 'briefings:list' %}" class="text-decoration-none"><i class="bi bi-arrow-left me-1"></i>Back to briefings</a>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-8">
+        <div class="card shadow-sm border-0">
+            <div class="card-body p-4 p-lg-5">
+                <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
+                    <div>
+                        <span class="eyebrow mb-2 d-inline-flex">Strategic briefing</span>
+                        <h1 class="display-6 fw-bold mb-1">{{ briefing.competitor.name }} briefing</h1>
+                        <p class="text-secondary mb-0">{{ briefing.created_at|date:"d M Y, H:i" }}</p>
+                    </div>
+                    <span class="badge text-bg-light">{{ briefing.word_count }} words</span>
+                </div>
+                <div class="briefing-content">{{ rendered_content|safe }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="card shadow-sm border-0">
+            <div class="card-body p-4">
+                <h2 class="h5">Meta</h2>
+                <p><strong>Competitor:</strong> <a href="{% url 'competitors:detail' briefing.competitor.pk %}">{{ briefing.competitor.name }}</a></p>
+                <p><strong>Created:</strong> {{ briefing.created_at }}</p>
+                <p><strong>Word count:</strong> {{ briefing.word_count }}</p>
+                <p><strong>Changes detected:</strong> {{ briefing.changes_detected_count }}</p>
+                <form method="post" action="{% url 'agent:run' briefing.competitor.pk %}">
+                    {% csrf_token %}
+                    <button class="btn btn-primary w-100" type="submit">Run agent again</button>
+                </form>
+            </div>
+        </div>
+        {% if briefing.changes_detected %}
+            <div class="card shadow-sm border-0 mt-4">
+                <div class="card-body p-4">
+                    <h2 class="h5">Diff</h2>
+                    <pre class="small mb-0">{{ briefing.changes_detected }}</pre>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

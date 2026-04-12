@@ -1,0 +1,69 @@
+{% extends 'base.html' %}
+{% block title %}Briefings{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <span class="eyebrow mb-2 d-inline-flex">Briefing library</span>
+        <h1 class="display-6 fw-bold mb-1">Briefings</h1>
+        <p class="text-secondary mb-0">{{ total_count }} total briefings</p>
+    </div>
+</div>
+
+<form method="get" class="card card-body shadow-sm border-0 mb-4">
+    <label for="competitor" class="form-label">Filter by competitor</label>
+    <div class="row g-2">
+        <div class="col-md-6">
+            <select name="competitor" id="competitor" class="form-select">
+                <option value="">All competitors</option>
+                {% for competitor in competitors %}
+                    <option value="{{ competitor.id }}" {% if selected_competitor == competitor.id|stringformat:'s' %}selected{% endif %}>{{ competitor.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-3">
+            <button class="btn btn-primary w-100" type="submit">Apply filter</button>
+        </div>
+    </div>
+</form>
+
+<div class="row g-4">
+    {% for briefing in page_obj %}
+        <div class="col-md-6">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <h2 class="h5 mb-0">{{ briefing.competitor.name }}</h2>
+                        <span class="badge text-bg-light">{{ briefing.word_count }} words</span>
+                    </div>
+                    <p class="small text-secondary">{{ briefing.created_at }}</p>
+                    <p>{{ briefing.preview }}</p>
+                    <div class="change-highlight-list mb-3">
+                        <span class="change-chip">{{ briefing.changes_detected_count }} changes captured</span>
+                    </div>
+                    <a href="{% url 'briefings:detail' briefing.pk %}">Read full briefing</a>
+                </div>
+            </div>
+        </div>
+    {% empty %}
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-body py-5 text-center text-secondary">No briefings yet. Run an agent on a competitor to generate one.</div>
+            </div>
+        </div>
+    {% endfor %}
+</div>
+
+{% if page_obj.paginator.num_pages > 1 %}
+    <nav class="mt-4">
+        <ul class="pagination">
+            {% if page_obj.has_previous %}
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if selected_competitor %}&competitor={{ selected_competitor }}{% endif %}">Previous</a></li>
+            {% endif %}
+            <li class="page-item active"><span class="page-link">{{ page_obj.number }}</span></li>
+            {% if page_obj.has_next %}
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}{% if selected_competitor %}&competitor={{ selected_competitor }}{% endif %}">Next</a></li>
+            {% endif %}
+        </ul>
+    </nav>
+{% endif %}
+{% endblock %}

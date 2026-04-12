@@ -1,0 +1,164 @@
+{% extends 'base.html' %}
+{% block title %}{{ competitor.name }}{% endblock %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
+    <div>
+        <span class="eyebrow mb-2 d-inline-flex">Competitor profile</span>
+        <h1 class="display-6 fw-bold mb-1">{{ competitor.name }}</h1>
+        <a class="text-secondary" href="{{ competitor.url }}" target="_blank" rel="noopener">{{ competitor.url }}</a>
+    </div>
+    <form method="post" action="{% url 'agent:run' competitor.pk %}">
+        {% csrf_token %}
+        <button class="btn btn-primary" type="submit"><i class="bi bi-stars me-1"></i>Run agent now</button>
+    </form>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="metric-card">
+            <div class="metric-label">Last status</div>
+            <div class="metric-value">{{ competitor.get_last_status_display }}</div>
+            <div class="metric-foot">Most recent scan state</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="metric-card">
+            <div class="metric-label">Snapshots</div>
+            <div class="metric-value">{{ snapshots|length }}</div>
+            <div class="metric-foot">{{ unique_snapshot_count }} unique in recent history</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="metric-card">
+            <div class="metric-label">Briefings</div>
+            <div class="metric-value">{{ briefings|length }}</div>
+            <div class="metric-foot">Latest strategic summaries</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="metric-card">
+            <div class="metric-label">Duplicate scans</div>
+            <div class="metric-value">{{ duplicate_count }}</div>
+            <div class="metric-foot">Repeated content snapshots</div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-7">
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h2 class="h5 mb-0">Recent briefings</h2>
+                    <a href="{% url 'briefings:list' %}?competitor={{ competitor.pk }}" class="small text-decoration-none">View all</a>
+                </div>
+                {% for briefing in briefings %}
+                    <article class="timeline-entry">
+                        <div class="timeline-date">{{ briefing.created_at|date:"d M Y, H:i" }}</div>
+                        <div class="timeline-content">
+                            <p class="mb-2">{{ briefing.preview }}</p>
+                            <div class="d-flex flex-wrap gap-2 align-items-center">
+                                <span class="badge text-bg-light">{{ briefing.word_count }} words</span>
+                                <span class="badge text-bg-light">{{ briefing.changes_detected_count }} changes</span>
+                                <a href="{% url 'briefings:detail' briefing.pk %}" class="small">Read briefing</a>
+                            </div>
+                        </div>
+                    </article>
+                {% empty %}
+                    <p class="text-secondary mb-0">No briefings yet.</p>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h2 class="h5 mb-0">Change pulse</h2>
+                    <span class="badge text-bg-light">Recent scan history</span>
+                </div>
+                <canvas id="snapshotChart" height="120"></canvas>
+                {% if recent_changes %}
+                    <div class="mt-4">
+                        <h3 class="h6 text-secondary">Latest detected shifts</h3>
+                        <div class="change-highlight-list">
+                            {% for item in recent_changes %}
+                                <span class="change-chip">{{ item }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-5">
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-body p-4">
+                <h2 class="h5">Recent snapshots</h2>
+                {% for snapshot in snapshots %}
+                    <div class="snapshot-card">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="fw-semibold">{{ snapshot.scraped_at|date:"d M Y, H:i" }}</span>
+                            {% if forloop.first %}
+                                <span class="badge text-bg-primary">Latest</span>
+                            {% endif %}
+                        </div>
+                        <p class="small text-secondary mb-2">Hash: {{ snapshot.content_hash|truncatechars:18 }}</p>
+                        <p class="mb-0">{{ snapshot.raw_text|truncatechars:180 }}</p>
+                    </div>
+                {% empty %}
+                    <p class="text-secondary mb-0">No snapshots yet.</p>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-4">
+                <h2 class="h5">Scan summary</h2>
+                <dl class="summary-list mb-0">
+                    <div>
+                        <dt>Last scraped</dt>
+                        <dd>{{ competitor.last_scraped|default:"Never" }}</dd>
+                    </div>
+                    <div>
+                        <dt>Latest snapshot</dt>
+                        <dd>{% if latest_snapshot %}{{ latest_snapshot.scraped_at|date:"d M Y, H:i" }}{% else %}No snapshot{% endif %}</dd>
+                    </div>
+                    <div>
+                        <dt>Previous snapshot</dt>
+                        <dd>{% if previous_snapshot %}{{ previous_snapshot.scraped_at|date:"d M Y, H:i" }}{% else %}Baseline only{% endif %}</dd>
+                    </div>
+                    <div>
+                        <dt>Notes</dt>
+                        <dd>{{ competitor.description|default:"No notes added yet." }}</dd>
+                    </div>
+                </dl>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+const snapshotCanvas = document.getElementById("snapshotChart");
+if (snapshotCanvas) {
+    new Chart(snapshotCanvas, {
+        type: "bar",
+        data: {
+            labels: {{ snapshot_labels|safe }},
+            datasets: [{
+                data: {{ snapshot_values|safe }},
+                borderRadius: 8,
+                backgroundColor: "#818cf8"
+            }]
+        },
+        options: {
+            plugins: { legend: { display: false } },
+            scales: {
+                x: { grid: { display: false } },
+                y: { beginAtZero: true, ticks: { precision: 0 } }
+            }
+        }
+    });
+}
+</script>
+{% endblock %}

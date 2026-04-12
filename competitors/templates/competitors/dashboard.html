@@ -1,0 +1,247 @@
+{% extends 'base.html' %}
+{% block title %}Competitors{% endblock %}
+{% block extra_head %}
+<meta name="description" content="Competitor dashboard with watchlist activity, change summaries, and run status.">
+{% endblock %}
+{% block content %}
+<section class="hero-surface rounded-4 p-4 p-lg-5 mb-4">
+    <div class="row align-items-center g-4">
+        <div class="col-lg-7">
+            <span class="eyebrow mb-3 d-inline-flex">Portfolio command center</span>
+            <h1 class="display-6 fw-bold mb-2">My Competitors</h1>
+            <p class="text-secondary mb-0">Launch scans, review recent change pulses, and keep your watchlist organized in one place.</p>
+        </div>
+        <div class="col-lg-5">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <span class="small text-uppercase text-secondary">Briefing activity</span>
+                        <span class="badge text-bg-light">Last 7 days</span>
+                    </div>
+                    <canvas id="briefingTrendChart" height="120"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-xl-3">
+        <div class="metric-card">
+            <div class="metric-label">Competitors</div>
+            <div class="metric-value">{{ total_competitors_count }}</div>
+            <div class="metric-foot">Watchlist size</div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="metric-card">
+            <div class="metric-label">Briefings</div>
+            <div class="metric-value">{{ total_briefings_count }}</div>
+            <div class="metric-foot">Strategic reports created</div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="metric-card">
+            <div class="metric-label">Snapshots</div>
+            <div class="metric-value">{{ total_snapshots_count }}</div>
+            <div class="metric-foot">Crawl history saved</div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="metric-card">
+            <div class="metric-label">Last run</div>
+            <div class="metric-value metric-date">{{ last_run_time|default:"Never" }}</div>
+            <div class="metric-foot">{{ failed_count }} failed, {{ pending_count }} pending</div>
+        </div>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body p-4">
+        <h2 class="h5 mb-3">Add competitor</h2>
+        <form method="post" class="row g-3">
+            {% csrf_token %}
+            <div class="col-md-6">
+                <label class="form-label" for="{{ form.name.id_for_label }}">Name</label>
+                {{ form.name }}
+            </div>
+            <div class="col-md-6">
+                <label class="form-label" for="{{ form.url.id_for_label }}">Website URL</label>
+                {{ form.url }}
+            </div>
+            <div class="col-12">
+                <label class="form-label" for="{{ form.description.id_for_label }}">Notes</label>
+                {{ form.description }}
+            </div>
+            <div class="col-12">
+                <div class="form-check">
+                    {{ form.is_active }}
+                    <label class="form-check-label" for="{{ form.is_active.id_for_label }}">Track this competitor immediately</label>
+                </div>
+            </div>
+            <div class="col-12">
+                <button type="submit" class="btn btn-primary">Save competitor</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="row g-4">
+    {% for row in competitors %}
+        {% with competitor=row.instance %}
+            <div class="col-12">
+                <div class="card border-0 shadow-sm competitor-card" {% if task_polling_enabled and competitor.current_task_id %}data-task-id="{{ competitor.current_task_id }}"{% endif %}>
+                    <div class="card-body p-4">
+                        <div class="d-flex flex-wrap justify-content-between gap-3">
+                            <div>
+                                <div class="d-flex align-items-center gap-2 flex-wrap">
+                                    <h2 class="h4 mb-0">{{ competitor.name }}</h2>
+                                    <span class="status-pill status-{{ competitor.last_status }}" data-status-text>{{ competitor.get_last_status_display }}</span>
+                                    {% if task_polling_enabled and competitor.current_task_id %}
+                                        <span class="status-pill status-pending">Agent running</span>
+                                    {% endif %}
+                                </div>
+                                <a class="small text-secondary text-break" href="{{ competitor.url }}" target="_blank" rel="noopener">{{ competitor.url }}</a>
+                                {% if competitor.description %}
+                                    <p class="text-secondary mt-3 mb-0">{{ competitor.description }}</p>
+                                {% endif %}
+                            </div>
+                            <div class="text-lg-end">
+                                <div class="small text-secondary">Last scraped</div>
+                                <div class="fw-semibold">{{ competitor.last_scraped|default:"Never" }}</div>
+                            </div>
+                        </div>
+
+                        <div class="row g-3 mt-2">
+                            <div class="col-md-3">
+                                <div class="mini-stat">
+                                    <span>Briefings</span>
+                                    <strong>{{ competitor.briefing_count }}</strong>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mini-stat">
+                                    <span>Snapshots</span>
+                                    <strong>{{ competitor.snapshot_count }}</strong>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mini-stat">
+                                    <span>Latest summary</span>
+                                    <strong>{{ competitor.last_briefing_preview|default:"No briefings yet."|truncatechars:120 }}</strong>
+                                </div>
+                            </div>
+                        </div>
+
+                        {% if row.change_highlights %}
+                            <div class="change-highlight-list mt-4">
+                                {% for item in row.change_highlights %}
+                                    <span class="change-chip">{{ item }}</span>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+
+                        <div class="d-flex flex-wrap gap-2 mt-4">
+                            <form method="post" action="{% url 'agent:run' competitor.pk %}" class="d-inline">
+                                {% csrf_token %}
+                                <button class="btn btn-primary run-agent-button" type="submit"><i class="bi bi-stars me-1"></i>Run agent</button>
+                            </form>
+                            <a href="{% url 'competitors:detail' competitor.pk %}" class="btn btn-outline-secondary"><i class="bi bi-graph-up-arrow me-1"></i>View detail</a>
+                            <a href="{% url 'briefings:list' %}?competitor={{ competitor.pk }}" class="btn btn-outline-secondary"><i class="bi bi-file-earmark-text me-1"></i>View briefings</a>
+                            <form method="post" action="{% url 'competitors:delete' competitor.pk %}" class="d-inline">
+                                {% csrf_token %}
+                                <button class="btn btn-outline-danger" type="submit" onclick="return confirm('Delete this competitor?');"><i class="bi bi-trash3 me-1"></i>Delete</button>
+                            </form>
+                        </div>
+
+                        {% if task_polling_enabled and competitor.current_task_id %}
+                            <div class="task-status-panel mt-3" data-task-panel>
+                                <i class="bi bi-arrow-repeat spin"></i>
+                                <span>Checking agent progress for this competitor...</span>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        {% endwith %}
+    {% empty %}
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body text-center py-5">
+                    <div class="empty-illustration mx-auto mb-3"><i class="bi bi-binoculars"></i></div>
+                    <h2 class="h4">Add your first competitor</h2>
+                    <p class="text-secondary mb-0">Start with one website you care about and let the agent build your watchlist history.</p>
+                </div>
+            </div>
+        </div>
+    {% endfor %}
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+const trendCanvas = document.getElementById("briefingTrendChart");
+if (trendCanvas) {
+    new Chart(trendCanvas, {
+        type: "line",
+        data: {
+            labels: {{ trend_labels|safe }},
+            datasets: [{
+                data: {{ trend_values|safe }},
+                borderColor: "#6366f1",
+                backgroundColor: "rgba(99, 102, 241, 0.14)",
+                fill: true,
+                tension: 0.35,
+                pointRadius: 0
+            }]
+        },
+        options: {
+            plugins: { legend: { display: false } },
+            scales: {
+                x: { grid: { display: false } },
+                y: { beginAtZero: true, ticks: { precision: 0 } }
+            }
+        }
+    });
+}
+
+document.querySelectorAll("[data-task-id]").forEach((card) => {
+    const taskId = card.dataset.taskId;
+    const taskPanel = card.querySelector("[data-task-panel]");
+    const statusText = card.querySelector("[data-status-text]");
+    if (!taskId || !taskPanel) {
+        return;
+    }
+
+    const poll = async () => {
+        try {
+            const response = await fetch(`/agent/status/${taskId}/`);
+            if (!response.ok) {
+                taskPanel.innerHTML = '<i class="bi bi-exclamation-circle"></i><span>Unable to fetch task status.</span>';
+                return;
+            }
+            const data = await response.json();
+            if (["success", "no_changes", "failed"].includes(data.status)) {
+                const messageMap = {
+                    success: "Agent finished and created a fresh briefing.",
+                    no_changes: "Agent finished. No significant changes were found.",
+                    failed: "Agent run failed. Please retry."
+                };
+                taskPanel.innerHTML = `<i class="bi bi-check-circle"></i><span>${messageMap[data.status]}</span>`;
+                if (statusText) {
+                    statusText.textContent = data.status === "failed" ? "Failed" : "Success";
+                    statusText.className = `status-pill ${data.status === "failed" ? "status-failed" : "status-success"}`;
+                }
+                setTimeout(() => window.location.reload(), 1000);
+                return;
+            }
+            taskPanel.innerHTML = '<i class="bi bi-arrow-repeat spin"></i><span>Agent is still running. Polling for updates.</span>';
+            setTimeout(poll, 2500);
+        } catch (error) {
+            taskPanel.innerHTML = '<i class="bi bi-exclamation-circle"></i><span>Network issue while polling task status.</span>';
+        }
+    };
+
+    poll();
+});
+</script>
+{% endblock %}

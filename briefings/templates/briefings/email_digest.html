@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Daily Briefing</title>
+</head>
+<body style="font-family: Arial, sans-serif; background: #f5f7fb; padding: 24px; color: #1f2937;">
+    <div style="max-width: 640px; margin: 0 auto; background: #ffffff; border-radius: 12px; padding: 32px;">
+        <h1 style="margin-top: 0;">Your Daily Competitive Intelligence Briefing</h1>
+        <p>Hello {{ user.first_name|default:user.username }}, here are the latest briefings for {{ current_date }}.</p>
+        {% for briefing in briefings %}
+            <div style="border-top: 1px solid #e5e7eb; padding-top: 20px; margin-top: 20px;">
+                <h2 style="font-size: 18px; margin-bottom: 8px;">{{ briefing.competitor.name }}</h2>
+                <p style="margin: 0 0 12px 0;">{{ briefing.preview }}</p>
+                <a href="{{ site_url }}{% url 'briefings:detail' briefing.pk %}" style="color: #4f46e5;">View full briefing</a>
+            </div>
+        {% endfor %}
+        <p style="margin-top: 32px; font-size: 14px; color: #6b7280;">
+            To change email settings, visit <a href="{{ profile_url }}">your profile</a>.
+        </p>
+    </div>
+</body>
+</html>

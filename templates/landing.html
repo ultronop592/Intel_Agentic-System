@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+{% block title %}IntelAgent{% endblock %}
+{% block content %}
+<section class="hero-surface rounded-4 p-4 p-lg-5">
+    <div class="row align-items-center g-4">
+        <div class="col-lg-7">
+            <span class="eyebrow mb-3 d-inline-flex">Competitive Intelligence Agent</span>
+            <h1 class="display-4 fw-bold mb-3">Know what your competitors are doing before your customers do.</h1>
+            <p class="lead text-secondary mb-4">Run website scans on demand, preserve competitor history, and turn noisy changes into briefings your team can act on.</p>
+            <div class="d-flex flex-wrap gap-2">
+                <a href="{% url 'accounts:signup' %}" class="btn btn-primary btn-lg">Start free</a>
+                <a href="{% url 'accounts:login' %}" class="btn btn-outline-secondary btn-lg">See the workspace</a>
+            </div>
+        </div>
+        <div class="col-lg-5">
+            <div class="card glass-card shadow-sm border-0">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <strong>Morning brief</strong>
+                        <span class="badge text-bg-light">New change set</span>
+                    </div>
+                    <h3 class="h5">Acme Analytics</h3>
+                    <p class="text-secondary">Pricing is now public, homepage messaging leans into AI ops, and new PM roles suggest investment in workflow intelligence.</p>
+                    <ul class="mb-0">
+                        <li>Starter plan visible at $49/month</li>
+                        <li>New “agent operations” section on homepage</li>
+                        <li>Three fresh roles mention customer intelligence</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="mt-5">
+    <div class="row g-4">
+        <div class="col-md-4">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body p-4">
+                    <div class="feature-icon mb-3"><i class="bi bi-radar"></i></div>
+                    <h2 class="h5">Competitor monitoring</h2>
+                    <p class="text-secondary mb-0">Track product pages, pricing pages, and messaging across your watchlist from one dashboard.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body p-4">
+                    <div class="feature-icon mb-3"><i class="bi bi-stars"></i></div>
+                    <h2 class="h5">AI strategic briefings</h2>
+                    <p class="text-secondary mb-0">Convert diffs into actionable summaries with insights and recommendations for the week ahead.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body p-4">
+                    <div class="feature-icon mb-3"><i class="bi bi-graph-up-arrow"></i></div>
+                    <h2 class="h5">Change analytics</h2>
+                    <p class="text-secondary mb-0">Spot momentum, scan history, and competitor activity trends without manual note-taking.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

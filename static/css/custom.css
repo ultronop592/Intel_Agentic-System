@@ -1,0 +1,333 @@
+:root {
+    --ia-primary: #6366f1;
+    --ia-primary-dark: #4338ca;
+    --ia-bg: #f3f5fb;
+    --ia-surface: #ffffff;
+    --ia-border: #e5e7eb;
+    --ia-text: #0f172a;
+    --ia-muted: #64748b;
+}
+
+body {
+    min-height: 100vh;
+    background:
+        radial-gradient(circle at top right, rgba(99, 102, 241, 0.10), transparent 24rem),
+        linear-gradient(180deg, #f8faff 0%, var(--ia-bg) 100%);
+    color: var(--ia-text);
+    font-family: "Inter", sans-serif;
+}
+
+a {
+    color: var(--ia-primary-dark);
+}
+
+.app-shell {
+    display: flex;
+    min-height: 100vh;
+}
+
+.sidebar {
+    width: 272px;
+    background: linear-gradient(180deg, #111827 0%, #0f172a 100%);
+    color: #fff;
+    flex-direction: column;
+    padding: 1.5rem 1rem;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+}
+
+.sidebar-brand {
+    margin-bottom: 2rem;
+}
+
+.brand-link {
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+    color: #fff;
+    text-decoration: none;
+}
+
+.brand-link small {
+    display: block;
+    color: rgba(255, 255, 255, 0.65);
+}
+
+.brand-mark {
+    width: 42px;
+    height: 42px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 14px;
+    background: rgba(99, 102, 241, 0.24);
+}
+
+.sidebar-nav {
+    display: grid;
+    gap: 0.5rem;
+}
+
+.sidebar-link {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.875rem 1rem;
+    border-radius: 1rem;
+    color: rgba(255, 255, 255, 0.72);
+    text-decoration: none;
+}
+
+.sidebar-link.active,
+.sidebar-link:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff;
+}
+
+.main-panel {
+    flex: 1;
+    min-width: 0;
+}
+
+.topbar {
+    background: rgba(255, 255, 255, 0.82);
+    backdrop-filter: blur(14px);
+    border-bottom: 1px solid rgba(148, 163, 184, 0.15);
+}
+
+.content-area {
+    padding: 1.5rem 0 2rem;
+}
+
+.hero-surface {
+    background:
+        linear-gradient(130deg, rgba(99, 102, 241, 0.12), rgba(255, 255, 255, 0.96)),
+        var(--ia-surface);
+    border: 1px solid rgba(99, 102, 241, 0.14);
+    box-shadow: 0 18px 42px rgba(15, 23, 42, 0.08);
+}
+
+.eyebrow {
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ia-primary-dark);
+    background: rgba(99, 102, 241, 0.1);
+    border-radius: 999px;
+    padding: 0.45rem 0.8rem;
+}
+
+.glass-card {
+    background: rgba(255, 255, 255, 0.82);
+    backdrop-filter: blur(14px);
+}
+
+.auth-shell {
+    background: var(--ia-surface);
+}
+
+.auth-panel {
+    min-height: 100%;
+}
+
+.auth-panel-primary {
+    background:
+        radial-gradient(circle at top left, rgba(165, 180, 252, 0.24), transparent 18rem),
+        linear-gradient(180deg, #4338ca 0%, #312e81 100%);
+    color: #fff;
+}
+
+.auth-benefits {
+    font-size: 0.98rem;
+}
+
+.auth-benefits i {
+    color: #c7d2fe;
+}
+
+.feature-icon {
+    width: 46px;
+    height: 46px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 14px;
+    background: rgba(99, 102, 241, 0.1);
+    color: var(--ia-primary-dark);
+    font-size: 1.2rem;
+}
+
+.metric-card,
+.mini-stat {
+    background: var(--ia-surface);
+    border: 1px solid var(--ia-border);
+    border-radius: 1.25rem;
+    padding: 1.15rem 1.2rem;
+    height: 100%;
+    box-shadow: 0 12px 26px rgba(15, 23, 42, 0.04);
+}
+
+.metric-label {
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--ia-muted);
+    margin-bottom: 0.5rem;
+}
+
+.metric-value {
+    font-size: 1.9rem;
+    font-weight: 800;
+    line-height: 1.1;
+}
+
+.metric-date {
+    font-size: 1rem;
+}
+
+.metric-foot,
+.mini-stat span {
+    font-size: 0.92rem;
+    color: var(--ia-muted);
+}
+
+.mini-stat strong {
+    display: block;
+    margin-top: 0.35rem;
+    font-size: 1rem;
+    color: var(--ia-text);
+}
+
+.status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.35rem 0.75rem;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
+.status-success {
+    color: #166534;
+    background: #dcfce7;
+}
+
+.status-pending {
+    color: #92400e;
+    background: #fef3c7;
+}
+
+.status-failed {
+    color: #991b1b;
+    background: #fee2e2;
+}
+
+.change-highlight-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.change-chip {
+    padding: 0.45rem 0.7rem;
+    border-radius: 999px;
+    background: #eef2ff;
+    color: var(--ia-primary-dark);
+    font-size: 0.85rem;
+}
+
+.task-status-panel {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.85rem 1rem;
+    border-radius: 1rem;
+    background: #eff6ff;
+    color: #1d4ed8;
+}
+
+.empty-illustration {
+    width: 76px;
+    height: 76px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 1.5rem;
+    background: #eef2ff;
+    color: var(--ia-primary-dark);
+    font-size: 2rem;
+}
+
+.timeline-entry {
+    position: relative;
+    padding-left: 1rem;
+    border-left: 2px solid #e2e8f0;
+    margin-left: 0.4rem;
+    padding-bottom: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.timeline-entry:last-child {
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+
+.timeline-date {
+    font-size: 0.82rem;
+    color: var(--ia-muted);
+    margin-bottom: 0.4rem;
+}
+
+.snapshot-card {
+    border: 1px solid var(--ia-border);
+    border-radius: 1rem;
+    padding: 1rem;
+    margin-top: 1rem;
+}
+
+.summary-list div {
+    padding: 0.75rem 0;
+    border-bottom: 1px solid var(--ia-border);
+}
+
+.summary-list div:last-child {
+    border-bottom: 0;
+}
+
+.summary-list dt {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    color: var(--ia-muted);
+}
+
+.summary-list dd {
+    margin: 0.35rem 0 0;
+}
+
+.briefing-content h2 {
+    font-size: 1.25rem;
+    margin-top: 1.75rem;
+    margin-bottom: 0.8rem;
+}
+
+.briefing-content ul {
+    padding-left: 1.2rem;
+}
+
+.spin {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+@media (max-width: 991.98px) {
+    .content-area {
+        padding-top: 1rem;
+    }
+}
