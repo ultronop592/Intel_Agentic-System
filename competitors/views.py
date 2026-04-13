@@ -4,6 +4,7 @@ from datetime import timedelta
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.db import IntegrityError, transaction
 from django.db.models import Count, OuterRef, Prefetch, Subquery
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -13,7 +14,7 @@ from django.views.decorators.http import require_POST
 
 from briefings.models import Briefing
 from competitors.forms import AddCompetitorForm
-from competitors.models import Competitor, CompetitorSnapshot
+from competitors.models import Competitor, CompetitorSnapshot, DiscoveredPage
 
 
 def _change_highlights(diff_text: str, limit: int = 3) -> list[str]:
@@ -63,9 +64,17 @@ def dashboard(request: HttpRequest) -> HttpResponse:
     if request.method == "POST" and form.is_valid():
         competitor = form.save(commit=False)
         competitor.user = request.user
-        competitor.save()
-        messages.success(request, "Competitor added successfully.")
-        return redirect("competitors:dashboard")
+        try:
+            with transaction.atomic():
+                competitor.save()
+            messages.success(request, "Competitor added successfully.")
+            return redirect("competitors:dashboard")
+        except IntegrityError:
+            form.add_error(
+                "url",
+                "This URL is already in your competitor list.",
+            )
+            messages.warning(request, "That URL is already being tracked.")
 
     total_briefings_count = Briefing.objects.filter(user=request.user).count()
     total_competitors_count = competitors.count()
