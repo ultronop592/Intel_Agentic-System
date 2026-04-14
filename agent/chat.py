@@ -11,9 +11,11 @@ def ask_intelligence_agent(user: User, query: str) -> str:
     """
     # 1. Gather context: Latest 5 snapshots across all competitors
     # We limit to keep the context window manageable for Groq
-    snapshots = CompetitorSnapshot.objects.filter(
-        competitor__user=user
-    ).select_related("competitor").order_by("-scraped_at")[:10]
+    snapshots = (
+        CompetitorSnapshot.objects.filter(competitor__user=user)
+        .select_related("competitor")
+        .order_by("-scraped_at")[:10]
+    )
 
     if not snapshots:
         return "I don't have enough data yet. Please add competitors and run the agent first."
@@ -27,7 +29,7 @@ def ask_intelligence_agent(user: User, query: str) -> str:
             f"Content excerpt: {snap.raw_text[:800]}..."
         )
         context_blocks.append(block)
-    
+
     context_str = "\n\n".join(context_blocks)
 
     # 3. Prepare the LLM call
@@ -41,12 +43,14 @@ def ask_intelligence_agent(user: User, query: str) -> str:
         f"{context_str}"
     )
 
-    messages = [
-        SystemMessage(content=system_prompt),
-        HumanMessage(content=query)
-    ]
+    messages = [SystemMessage(content=system_prompt), HumanMessage(content=query)]
 
-    llm = get_llm()
-    response = llm.invoke(messages)
-    
+    from agent.llm_factory import invoke_llm, RateLimitExceeded
+
+    try:
+        llm = get_llm(user.id)
+        response = invoke_llm(llm, messages, user.id)
+    except RateLimitExceeded:
+        return "Daily API limit exceeded. Please try again tomorrow."
+
     return response.content

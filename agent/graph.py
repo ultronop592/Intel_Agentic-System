@@ -5,9 +5,10 @@ from langgraph.graph import END, START, StateGraph
 
 from agent.differ import compute_diff, compute_hash
 from agent.discovery import discover_pages
-from agent.llm_factory import get_llm
+from agent.llm_factory import get_llm, invoke_llm
 from agent.parser import extract_text
 from agent.scraper import scrape_page
+from competitors.models import Competitor, CompetitorSnapshot
 
 
 class AgentState(TypedDict):
@@ -36,7 +37,7 @@ def scrape_node(state: AgentState) -> AgentState:
 def discovery_node(state: AgentState) -> AgentState:
     if state.get("error"):
         return state
-    
+
     html = state["scraped_data"].get("html", "")
     if html:
         pages = discover_pages(html, state["url"])
@@ -50,7 +51,9 @@ def diff_node(state: AgentState) -> AgentState:
         return state
 
     html = state["scraped_data"].get("html", "")
-    extracted = extract_text(html) if html else state["scraped_data"].get("body_text", "")
+    extracted = (
+        extract_text(html) if html else state["scraped_data"].get("body_text", "")
+    )
     previous_text = state.get("previous_text", "")
     state["scraped_data"]["clean_text"] = extracted
     state["content_hash"] = compute_hash(extracted)
@@ -69,6 +72,9 @@ def diff_node(state: AgentState) -> AgentState:
 def analyse_node(state: AgentState) -> AgentState:
     if state.get("has_changes") is False or state.get("error"):
         return state
+
+    competitor = Competitor.objects.get(id=state["competitor_id"])
+    user_id = competitor.user.id
 
     system_prompt = (
         "You are a strategic competitive intelligence analyst. "
@@ -94,11 +100,19 @@ def analyse_node(state: AgentState) -> AgentState:
         f"Scraped text:\n{state['scraped_data'].get('clean_text', '')[:4000]}\n\n"
         f"Diff (Lines starting with + are additions, - are deletions):\n{state.get('diff_text', '')[:3000]}"
     )
-    
-    llm = get_llm()
-    messages = [SystemMessage(content=system_prompt), HumanMessage(content=user_prompt)]
-    response = llm.invoke(messages)
-    state['briefing_content'] = response.content
+
+    from agent.llm_factory import invoke_llm, RateLimitExceeded
+
+    try:
+        llm = get_llm(user_id)
+        messages = [
+            SystemMessage(content=system_prompt),
+            HumanMessage(content=user_prompt),
+        ]
+        response = invoke_llm(llm, messages, user_id)
+        state["briefing_content"] = response.content
+    except RateLimitExceeded:
+        state["briefing_content"] = "Daily API limit exceeded."
     print(f"Briefing: {state['briefing_content'][:200]}")
     return state
 

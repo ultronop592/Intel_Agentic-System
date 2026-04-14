@@ -1,0 +1,42 @@
+services:
+  - name: intel-agent-web
+    repo: https://github.com/your-repo/intel-agent.git
+    buildCommand: "./build.sh"
+    startCommand: "gunicorn config.wsgi:application --workers 2 --bind 0.0.0.0:$PORT"
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: REDIS_URL
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      - key: GROQ_MODEL
+        value: llama-3.3-70b-versatile
+      - key: SECRET_KEY
+        generateValue: true
+      - key: ALLOWED_HOSTS
+        value: your-app.onrender.com
+      - key: DAILY_API_LIMIT
+        value: "20"
+      - key: DEBUG
+        value: "False"
+
+  - name: intel-agent-worker
+    repo: https://github.com/your-repo/intel-agent.git
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "celery -A config worker --loglevel=info"
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: REDIS_URL
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      - key: GROQ_MODEL
+        value: llama-3.3-70b-versatile
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DAILY_API_LIMIT
+        value: "20"
+      - key: DEBUG
+        value: "False"

@@ -14,23 +14,25 @@ def generate_swot_analysis(user) -> Optional[SwotReport]:
     # 1. Gather all briefings from the last 30 days
     end_date = timezone.now().date()
     start_date = end_date - timedelta(days=30)
-    
+
     recent_briefings = Briefing.objects.filter(
         user=user,
         created_at__date__range=[start_date, end_date],
-        status=Briefing.STATUS_COMPLETED
+        status=Briefing.STATUS_COMPLETED,
     ).select_related("competitor")
-    
+
     if not recent_briefings.exists():
         return None
-        
+
     # 2. Extract content for the LLM
     agg_text = []
     for b in recent_briefings:
-        agg_text.append(f"Competitor: {b.competitor.name}\nBriefing: {b.content[:1000]}")
-    
+        agg_text.append(
+            f"Competitor: {b.competitor.name}\nBriefing: {b.content[:1000]}"
+        )
+
     context_str = "\n\n".join(agg_text)
-    
+
     # 3. Request SWOT from LLM
     system_prompt = (
         "You are a strategic business consultant. Analyze the following competitive intelligence data "
@@ -44,22 +46,27 @@ def generate_swot_analysis(user) -> Optional[SwotReport]:
         "- 'threats': (bullet points as text)\n\n"
         "Keep points concise and strategic."
     )
-    
+
     messages = [
         SystemMessage(content=system_prompt),
-        HumanMessage(content=f"Competitive Data:\n{context_str[:12000]}")
+        HumanMessage(content=f"Competitive Data:\n{context_str[:12000]}"),
     ]
-    
-    llm = get_llm()
-    response = llm.invoke(messages)
-    
+
+    from agent.llm_factory import invoke_llm, RateLimitExceeded
+
+    try:
+        llm = get_llm(user.id)
+        response = invoke_llm(llm, messages, user.id)
+    except RateLimitExceeded:
+        return None
+
     # Simple JSON extraction logic (handles markdown block if present)
     content = response.content
     if "```json" in content:
         content = content.split("```json")[1].split("```")[0].strip()
     elif "```" in content:
-         content = content.split("```")[1].split("```")[0].strip()
-    
+        content = content.split("```")[1].split("```")[0].strip()
+
     try:
         data = json.loads(content)
         return SwotReport.objects.create(
@@ -70,7 +77,7 @@ def generate_swot_analysis(user) -> Optional[SwotReport]:
             opportunities=data.get("opportunities", ""),
             threats=data.get("threats", ""),
             period_start=start_date,
-            period_end=end_date
+            period_end=end_date,
         )
     except Exception:
         # Fallback if JSON parsing fails
@@ -78,5 +85,5 @@ def generate_swot_analysis(user) -> Optional[SwotReport]:
             user=user,
             content=response.content,
             period_start=start_date,
-            period_end=end_date
+            period_end=end_date,
         )
