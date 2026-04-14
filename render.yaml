@@ -24,14 +24,14 @@ services:
         value: "False"
       - key: DJANGO_SETTINGS_MODULE
         value: config.settings.production
-    startCommand: "python manage.py migrate --noinput && gunicorn config.wsgi:application --bind 0.0.0.0:8000"
+    dockerCommand: "python manage.py migrate --noinput && gunicorn config.wsgi:application --bind 0.0.0.0:8000"
 
   - name: intel-agent-worker
     type: worker
     runtime: docker
     plan: free
     dockerfilePath: ./Dockerfile
-    startCommand: "celery -A config worker --loglevel=info"
+    dockerCommand: "celery -A config worker --loglevel=info"
     envVars:
       - key: DATABASE_URL
         sync: false
