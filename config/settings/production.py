@@ -23,17 +23,4 @@ if DATABASE_URL:
         )
     }
 
-# Upstash Redis
-REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
-
-CELERY_BROKER_URL = REDIS_URL
-CELERY_RESULT_BACKEND = REDIS_URL
 CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
-
-# Cache with Upstash Redis
-CACHES = {
-    "default": {
-        "BACKEND": "django.core.cache.backends.redis.RedisCache",
-        "LOCATION": REDIS_URL,
-    }
-}
