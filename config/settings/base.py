@@ -114,8 +114,12 @@ LOGIN_URL = "accounts:login"
 LOGIN_REDIRECT_URL = "competitors:dashboard"
 LOGOUT_REDIRECT_URL = "accounts:login"
 
-CELERY_BROKER_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
-CELERY_RESULT_BACKEND = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+
+if REDIS_URL.startswith("rediss://") and "ssl_cert_reqs" not in REDIS_URL:
+    REDIS_URL = f"{REDIS_URL}?ssl_cert_reqs=CERT_REQUIRED"
+
+CELERY_BROKER_URL = REDIS_URL
 CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"
@@ -128,12 +132,23 @@ CELERY_TASK_EAGER_PROPAGATES = (
     os.getenv("CELERY_TASK_EAGER_PROPAGATES", "True").lower() == "true"
 )
 
-CACHES = {
-    "default": {
-        "BACKEND": "django.core.cache.backends.redis.RedisCache",
-        "LOCATION": os.getenv("REDIS_URL", "redis://localhost:6379/0"),
-    }
+CELERY_RESULT_BACKEND = REDIS_URL
+CELERY_TASK_IGNORE_RESULT = False
+
+REDIS_CACHE_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+
+cache_config = {
+    "BACKEND": "django.core.cache.backends.redis.RedisCache",
+    "LOCATION": REDIS_CACHE_URL,
 }
+
+if REDIS_CACHE_URL.startswith("rediss://"):
+    cache_config["OPTIONS"] = {
+        "ssl_cert_reqs": "required",
+    }
+
+CACHES = {"default": cache_config}
+
 DAILY_API_LIMIT = int(os.getenv("DAILY_API_LIMIT", "20"))
 
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
