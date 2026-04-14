@@ -49,3 +49,5 @@ services:
         value: "False"
       - key: DJANGO_SETTINGS_MODULE
         value: config.settings.production
+      - key: C_FORCE_ROOT
+        value: "true"
