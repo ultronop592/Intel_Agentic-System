@@ -1,8 +1,10 @@
+version: 1
 services:
   - name: intel-agent-web
     type: web
     runtime: docker
-    plan: starter # Adjust plan as needed
+    plan: free
+    dockerfilePath: ./Dockerfile
     envVars:
       - key: DATABASE_URL
         sync: false
@@ -18,17 +20,19 @@ services:
         value: .onrender.com
       - key: DAILY_API_LIMIT
         value: "20"
+      - key: DEBUG
+        value: "False"
       - key: DJANGO_SETTINGS_MODULE
         value: config.settings.production
-    dockerCommand: "gunicorn config.wsgi:application --bind 0.0.0.0:8000"
-    # Run migrations automatically on every deploy
+    startCommand: "gunicorn config.wsgi:application --bind 0.0.0.0:8000"
     releaseCommand: "python manage.py migrate --noinput"
 
   - name: intel-agent-worker
     type: worker
     runtime: docker
-    plan: starter
-    dockerCommand: "celery -A config worker --loglevel=info"
+    plan: free
+    dockerfilePath: ./Dockerfile
+    startCommand: "celery -A config worker --loglevel=info"
     envVars:
       - key: DATABASE_URL
         sync: false
