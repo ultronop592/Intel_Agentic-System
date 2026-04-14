@@ -1,0 +1,3 @@
+- [ ] Change `startCommand` to `dockerCommand` for both web and worker services
+- [ ] Commit and push the fix to GitHub
+- [ ] Verify that Render dashboard accepts the new Blueprint

@@ -24,7 +24,7 @@ services:
         value: "False"
       - key: DJANGO_SETTINGS_MODULE
         value: config.settings.production
-    dockerCommand: "/bin/sh -c \"python manage.py migrate --noinput && gunicorn config.wsgi:application --bind 0.0.0.0:8000\""
+    dockerCommand: "./start.sh"
 
   - name: intel-agent-worker
     type: worker

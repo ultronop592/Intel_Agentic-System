@@ -25,16 +25,11 @@ COPY . .
 # Install Playwright browsers (chromium)
 RUN playwright install chromium
 
-# Make build.sh executable
-RUN chmod +x build.sh
-
-# Run the build script (collectstatic, migrations)
-# Note: DATABASE_URL must be provided at runtime if migrate is run here, 
-# or we can run it in the start command. For now, we'll let build.sh handle it.
-# RUN ./build.sh
+# Make scripts executable
+RUN chmod +x build.sh start.sh
 
 # Expose port (Render uses $PORT)
 EXPOSE 8000
 
-# Default command (can be overridden in render.yaml)
-CMD ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8000"]
+# Default command
+CMD ["./start.sh"]
