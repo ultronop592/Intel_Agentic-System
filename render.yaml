@@ -1,8 +1,8 @@
 services:
   - name: intel-agent-web
-    repo: https://github.com/your-repo/intel-agent.git
-    buildCommand: "./build.sh"
-    startCommand: "gunicorn config.wsgi:application --workers 2 --bind 0.0.0.0:$PORT"
+    type: web
+    runtime: docker
+    plan: starter # Adjust plan as needed
     envVars:
       - key: DATABASE_URL
         sync: false
@@ -15,16 +15,20 @@ services:
       - key: SECRET_KEY
         generateValue: true
       - key: ALLOWED_HOSTS
-        value: your-app.onrender.com
+        value: .onrender.com
       - key: DAILY_API_LIMIT
         value: "20"
-      - key: DEBUG
-        value: "False"
+      - key: DJANGO_SETTINGS_MODULE
+        value: config.settings.production
+    dockerCommand: "gunicorn config.wsgi:application --bind 0.0.0.0:8000"
+    # Run migrations automatically on every deploy
+    releaseCommand: "python manage.py migrate --noinput"
 
   - name: intel-agent-worker
-    repo: https://github.com/your-repo/intel-agent.git
-    buildCommand: "pip install -r requirements.txt"
-    startCommand: "celery -A config worker --loglevel=info"
+    type: worker
+    runtime: docker
+    plan: starter
+    dockerCommand: "celery -A config worker --loglevel=info"
     envVars:
       - key: DATABASE_URL
         sync: false
@@ -40,3 +44,5 @@ services:
         value: "20"
       - key: DEBUG
         value: "False"
+      - key: DJANGO_SETTINGS_MODULE
+        value: config.settings.production
