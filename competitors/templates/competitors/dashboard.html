@@ -297,9 +297,15 @@
                     {% if task_polling_enabled and competitor.current_task_id %}
                         <div class="task-status-panel" data-task-panel>
                             <i class="bi bi-arrow-repeat spin"></i>
-                            <span>Fetching live updates...</span>
+                            <div style="flex: 1;">
+                                <span>Fetching live updates...</span>
+                                <div style="font-size: 11px; opacity: 0.8; margin-top: 4px;">
+                                    Taking too long? <a href="." style="color: inherit; text-decoration: underline;">Reload page</a>
+                                </div>
+                            </div>
                         </div>
                     {% endif %}
+
                 </div>
                 
                 <div class="comp-right">

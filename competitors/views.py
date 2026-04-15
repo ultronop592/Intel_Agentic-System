@@ -35,8 +35,23 @@ def _change_highlights(diff_text: str, limit: int = 3) -> list[str]:
 
 @login_required
 def dashboard(request: HttpRequest) -> HttpResponse:
-    """List the user's competitors and allow secure creation of new ones."""
+    """List the user's competitors and allow cleanup of stale tasks."""
+    # Auto-cleanup stale tasks older than 15 minutes
+    stale_threshold = timezone.now() - timezone.timedelta(minutes=15)
+    stale_tasks = Competitor.objects.filter(
+        user=request.user, 
+        current_task_started_at__lt=stale_threshold
+    ).exclude(current_task_id="")
+    
+    if stale_tasks.exists():
+        stale_tasks.update(
+            last_status=Competitor.STATUS_FAILED,
+            current_task_id="",
+            current_task_started_at=None
+        )
+
     last_briefing_preview = Briefing.objects.filter(competitor=OuterRef("pk")).order_by("-created_at").values("content")[:1]
+
     last_briefing_diff = (
         Briefing.objects.filter(competitor=OuterRef("pk")).order_by("-created_at").values("changes_detected")[:1]
     )

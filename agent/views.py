@@ -96,7 +96,22 @@ def agent_status_view(request: HttpRequest, task_id: str) -> JsonResponse:
     if status in ["failure", "revoked", "rejected", "ignored"]:
         status = "failed"
     
+    # Handle "ghost" tasks that are stuck in PENDING but likely cleared from Redis
+    if status == "pending":
+        # Look up the competitor owning this task
+        competitor = Competitor.objects.filter(current_task_id=task_id).first()
+        if competitor and competitor.current_task_started_at:
+            age = (timezone.now() - competitor.current_task_started_at).total_seconds()
+            if age > 900:  # 15 minutes
+                status = "failed"
+                # Opportunity to clear it proactively
+                competitor.current_task_id = ""
+                competitor.current_task_started_at = None
+                competitor.last_status = Competitor.STATUS_FAILED
+                competitor.save(update_fields=["current_task_id", "current_task_started_at", "last_status"])
+    
     payload = {"status": status, "briefing_id": None}
+
     
     if isinstance(task_result.result, dict):
         # Override with specific result status if available
