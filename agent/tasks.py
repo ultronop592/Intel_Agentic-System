@@ -105,18 +105,20 @@ def run_agent_for_competitor(self, competitor_id: int) -> dict:
         return {"status": "failed", "briefing_id": None}
     except Exception as exc:
         logger.exception("Agent run failed for competitor %s", competitor_id)
-        try:
-            competitor = Competitor.objects.get(pk=competitor_id)
-            competitor.last_status = Competitor.STATUS_FAILED
-            competitor.last_scraped = timezone.now()
-            competitor.current_task_id = ""
-            competitor.current_task_started_at = None
-            competitor.save(
-                update_fields=["last_status", "last_scraped", "current_task_id", "current_task_started_at"]
-            )
-        except Competitor.DoesNotExist:
-            logger.warning("Competitor %s disappeared while updating failure state.", competitor_id)
+        if self.request.retries >= self.max_retries:
+            try:
+                competitor = Competitor.objects.get(pk=competitor_id)
+                competitor.last_status = Competitor.STATUS_FAILED
+                competitor.last_scraped = timezone.now()
+                competitor.current_task_id = ""
+                competitor.current_task_started_at = None
+                competitor.save(
+                    update_fields=["last_status", "last_scraped", "current_task_id", "current_task_started_at"]
+                )
+            except Competitor.DoesNotExist:
+                logger.warning("Competitor %s disappeared while updating failure state.", competitor_id)
         raise self.retry(exc=exc, countdown=60)
+
     finally:
         cache.delete(lock_key)
 

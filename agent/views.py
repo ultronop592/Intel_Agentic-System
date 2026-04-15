@@ -90,11 +90,21 @@ def agent_status_view(request: HttpRequest, task_id: str) -> JsonResponse:
         )
 
     task_result = AsyncResult(task_id)
-    payload = {"status": task_result.status.lower(), "briefing_id": None}
+    status = task_result.status.lower()
+    
+    # Map Celery terminal states to application terminal states
+    if status in ["failure", "revoked", "rejected", "ignored"]:
+        status = "failed"
+    
+    payload = {"status": status, "briefing_id": None}
+    
     if isinstance(task_result.result, dict):
+        # Override with specific result status if available
         payload["status"] = task_result.result.get("status", payload["status"])
         payload["briefing_id"] = task_result.result.get("briefing_id")
+    
     return JsonResponse(payload)
+
 
 
 @login_required
