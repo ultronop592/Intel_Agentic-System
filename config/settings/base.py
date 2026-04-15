@@ -117,7 +117,7 @@ LOGOUT_REDIRECT_URL = "accounts:login"
 REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
 
 if REDIS_URL.startswith("rediss://") and "ssl_cert_reqs" not in REDIS_URL:
-    REDIS_URL = f"{REDIS_URL}?ssl_cert_reqs=CERT_REQUIRED"
+    REDIS_URL = f"{REDIS_URL}?ssl_cert_reqs=none"
 
 CELERY_BROKER_URL = REDIS_URL
 CELERY_ACCEPT_CONTENT = ["json"]
@@ -144,7 +144,7 @@ cache_config = {
 
 if REDIS_CACHE_URL.startswith("rediss://"):
     cache_config["OPTIONS"] = {
-        "ssl_cert_reqs": "required",
+        "ssl_cert_reqs": None,
     }
 
 CACHES = {"default": cache_config}
