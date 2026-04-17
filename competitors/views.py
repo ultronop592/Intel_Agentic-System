@@ -15,6 +15,7 @@ from django.views.decorators.http import require_POST
 from briefings.models import Briefing
 from competitors.forms import AddCompetitorForm
 from competitors.models import Competitor, CompetitorSnapshot, DiscoveredPage
+from celery.result import AsyncResult
 
 
 def _change_highlights(diff_text: str, limit: int = 3) -> list[str]:
@@ -36,19 +37,35 @@ def _change_highlights(diff_text: str, limit: int = 3) -> list[str]:
 @login_required
 def dashboard(request: HttpRequest) -> HttpResponse:
     """List the user's competitors and allow cleanup of stale tasks."""
-    # Auto-cleanup stale tasks older than 15 minutes
-    stale_threshold = timezone.now() - timezone.timedelta(minutes=5)
-    stale_tasks = Competitor.objects.filter(
+    # Auto-cleanup genuinely stale tasks (check real Celery state first)
+    stale_threshold = timezone.now() - timezone.timedelta(minutes=3)
+    stale_candidates = Competitor.objects.filter(
         user=request.user, 
         current_task_started_at__lt=stale_threshold
     ).exclude(current_task_id="")
     
-    if stale_tasks.exists():
-        stale_tasks.update(
-            last_status=Competitor.STATUS_FAILED,
-            current_task_id="",
-            current_task_started_at=None
-        )
+    for comp in stale_candidates:
+        # Check if the Celery task is truly dead before marking failed
+        try:
+            result = AsyncResult(comp.current_task_id)
+            celery_state = result.status
+        except Exception:
+            celery_state = "UNKNOWN"
+        
+        # Only mark as failed if Celery confirms the task is not actively running
+        if celery_state not in ("STARTED", "RETRY"):
+            # Task is dead/finished — if it succeeded, save the result
+            if celery_state == "SUCCESS" and isinstance(result.result, dict):
+                briefing_id = result.result.get("briefing_id")
+                if briefing_id:
+                    comp.last_status = Competitor.STATUS_SUCCESS
+                else:
+                    comp.last_status = Competitor.STATUS_SUCCESS
+            else:
+                comp.last_status = Competitor.STATUS_FAILED
+            comp.current_task_id = ""
+            comp.current_task_started_at = None
+            comp.save(update_fields=["last_status", "current_task_id", "current_task_started_at"])
 
     last_briefing_preview = Briefing.objects.filter(competitor=OuterRef("pk")).order_by("-created_at").values("content")[:1]
 

@@ -152,4 +152,8 @@ CACHES = {"default": cache_config}
 DAILY_API_LIMIT = int(os.getenv("DAILY_API_LIMIT", "20"))
 
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
-GROQ_MODEL = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
+GROQ_MODEL = os.getenv("GROQ_MODEL", "llama-3.1-8b-instant")
+
+# Scraper settings
+SCRAPER_TIMEOUT = int(os.getenv("SCRAPER_TIMEOUT", "15"))
+ENABLE_SCREENSHOTS = os.getenv("ENABLE_SCREENSHOTS", "False").lower() == "true"

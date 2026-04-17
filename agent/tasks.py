@@ -1,6 +1,7 @@
 import logging
 
 from celery import shared_task
+from celery.exceptions import SoftTimeLimitExceeded
 from django.core.cache import cache
 from django.db import transaction
 from django.utils import timezone
@@ -16,7 +17,7 @@ def _lock_key(competitor_id: int) -> str:
     return f"competitor-agent-lock:{competitor_id}"
 
 
-@shared_task(bind=True, max_retries=3)
+@shared_task(bind=True, max_retries=2, soft_time_limit=120, time_limit=180)
 def run_agent_for_competitor(self, competitor_id: int) -> dict:
     logger.info(f"Agent started for competitor {competitor_id}")
     
@@ -103,6 +104,20 @@ def run_agent_for_competitor(self, competitor_id: int) -> dict:
     except Competitor.DoesNotExist:
         logger.warning("Competitor %s does not exist for agent run.", competitor_id)
         return {"status": "failed", "briefing_id": None}
+    except SoftTimeLimitExceeded:
+        logger.error("Agent run timed out for competitor %s", competitor_id)
+        try:
+            competitor = Competitor.objects.get(pk=competitor_id)
+            competitor.last_status = Competitor.STATUS_FAILED
+            competitor.last_scraped = timezone.now()
+            competitor.current_task_id = ""
+            competitor.current_task_started_at = None
+            competitor.save(
+                update_fields=["last_status", "last_scraped", "current_task_id", "current_task_started_at"]
+            )
+        except Competitor.DoesNotExist:
+            pass
+        return {"status": "failed", "briefing_id": None}
     except Exception as exc:
         logger.exception("Agent run failed for competitor %s", competitor_id)
         if self.request.retries >= self.max_retries:
@@ -117,7 +132,7 @@ def run_agent_for_competitor(self, competitor_id: int) -> dict:
                 )
             except Competitor.DoesNotExist:
                 logger.warning("Competitor %s disappeared while updating failure state.", competitor_id)
-        raise self.retry(exc=exc, countdown=60)
+        raise self.retry(exc=exc, countdown=30)
 
     finally:
         cache.delete(lock_key)

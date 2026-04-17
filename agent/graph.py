@@ -27,6 +27,9 @@ class AgentState(TypedDict):
 
 def scrape_node(state: AgentState) -> AgentState:
     scraped_data = scrape_page(state["url"], state["competitor_id"])
+    # Cap HTML early to save memory on constrained containers
+    if "html" in scraped_data and len(scraped_data.get("html", "")) > 100_000:
+        scraped_data["html"] = scraped_data["html"][:100_000]
     state["scraped_data"] = scraped_data
     state["error"] = scraped_data.get("error")
     state["discovered_pages"] = []
