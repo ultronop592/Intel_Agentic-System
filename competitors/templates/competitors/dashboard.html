@@ -392,7 +392,21 @@
         const statusText = card.querySelector("[data-status-text]");
         if (!taskId || !taskPanel) return;
 
+        const MAX_POLL_MS = 2 * 60 * 1000; // 2-minute client-side timeout
+        const POLL_INTERVAL = 3000;
+        const startedAt = Date.now();
+
         const poll = async () => {
+            // Client-side timeout — stop polling and show reload link
+            if (Date.now() - startedAt > MAX_POLL_MS) {
+                if (typeof hideAgentLoader === 'function') hideAgentLoader();
+                taskPanel.innerHTML = '<i class="bi bi-exclamation-triangle"></i><div style="flex:1"><span>Task may have finished or timed out.</span><div style="font-size:11px;opacity:0.8;margin-top:4px"><a href="." style="color:inherit;text-decoration:underline">Reload page</a> to see the latest status.</div></div>';
+                taskPanel.style.background = "rgba(239, 68, 68, 0.1)";
+                taskPanel.style.borderColor = "rgba(239, 68, 68, 0.2)";
+                taskPanel.style.color = "#ef4444";
+                return;
+            }
+
             try {
                 if (typeof showAgentLoader === 'function') showAgentLoader('Analysis in progress...');
                 const response = await fetch(`/agent/status/${taskId}/`);
@@ -412,11 +426,11 @@
                     setTimeout(() => window.location.reload(), 1500);
                     return;
                 }
-                setTimeout(poll, 3000);
+                setTimeout(poll, POLL_INTERVAL);
 
             } catch (error) {
                 if (typeof hideAgentLoader === 'function') hideAgentLoader();
-                taskPanel.innerHTML = '<i class="bi bi-exclamation-triangle"></i><span>Status poll failed.</span>';
+                taskPanel.innerHTML = '<i class="bi bi-exclamation-triangle"></i><span>Status poll failed. <a href="." style="color:inherit;text-decoration:underline">Reload page</a></span>';
             }
         };
         poll();

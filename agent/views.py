@@ -100,15 +100,23 @@ def agent_status_view(request: HttpRequest, task_id: str) -> JsonResponse:
     if status == "pending":
         # Look up the competitor owning this task
         competitor = Competitor.objects.filter(current_task_id=task_id).first()
-        if competitor and competitor.current_task_started_at:
+        if not competitor:
+            # Orphaned task — no competitor owns it anymore
+            status = "failed"
+        elif competitor.current_task_started_at:
             age = (timezone.now() - competitor.current_task_started_at).total_seconds()
-            if age > 900:  # 15 minutes
+            if age > 300:  # 5 minutes — fail fast instead of 15
                 status = "failed"
-                # Opportunity to clear it proactively
                 competitor.current_task_id = ""
                 competitor.current_task_started_at = None
                 competitor.last_status = Competitor.STATUS_FAILED
                 competitor.save(update_fields=["current_task_id", "current_task_started_at", "last_status"])
+        else:
+            # No started_at timestamp — likely stale from a previous deploy
+            status = "failed"
+            competitor.current_task_id = ""
+            competitor.last_status = Competitor.STATUS_FAILED
+            competitor.save(update_fields=["current_task_id", "last_status"])
     
     payload = {"status": status, "briefing_id": None}
 

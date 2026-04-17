@@ -37,7 +37,7 @@ def _change_highlights(diff_text: str, limit: int = 3) -> list[str]:
 def dashboard(request: HttpRequest) -> HttpResponse:
     """List the user's competitors and allow cleanup of stale tasks."""
     # Auto-cleanup stale tasks older than 15 minutes
-    stale_threshold = timezone.now() - timezone.timedelta(minutes=15)
+    stale_threshold = timezone.now() - timezone.timedelta(minutes=5)
     stale_tasks = Competitor.objects.filter(
         user=request.user, 
         current_task_started_at__lt=stale_threshold
