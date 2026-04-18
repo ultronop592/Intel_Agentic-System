@@ -333,6 +333,10 @@
                         </form>
                         <a href="{% url 'competitors:detail' competitor.pk %}" class="btn btn-secondary">Meta</a>
                         <a href="{% url 'briefings:list' %}?competitor={{ competitor.pk }}" class="btn btn-secondary">Briefings</a>
+                        <form method="post" action="{% url 'competitors:delete' competitor.pk %}" style="margin:0;" onsubmit="return confirm('Are you sure you want to delete this competitor? All briefings and snapshots will be permanently deleted.');">
+                            {% csrf_token %}
+                            <button class="btn btn-danger" type="submit" title="Delete Competitor"><i class="bi bi-trash"></i></button>
+                        </form>
                     </div>
                 </div>
             </div>
