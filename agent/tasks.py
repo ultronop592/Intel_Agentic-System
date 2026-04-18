@@ -5,6 +5,7 @@ from celery.exceptions import SoftTimeLimitExceeded
 from django.core.cache import cache
 from django.db import transaction
 from django.utils import timezone
+from django.conf import settings
 
 from agent.graph import build_graph
 from briefings.models import Briefing
@@ -120,6 +121,20 @@ def run_agent_for_competitor(self, competitor_id: int) -> dict:
         return {"status": "failed", "briefing_id": None}
     except Exception as exc:
         logger.exception("Agent run failed for competitor %s", competitor_id)
+        if getattr(settings, 'CELERY_TASK_ALWAYS_EAGER', False) or self.request.is_eager:
+            try:
+                competitor = Competitor.objects.get(pk=competitor_id)
+                competitor.last_status = Competitor.STATUS_FAILED
+                competitor.last_scraped = timezone.now()
+                competitor.current_task_id = ""
+                competitor.current_task_started_at = None
+                competitor.save(
+                    update_fields=["last_status", "last_scraped", "current_task_id", "current_task_started_at"]
+                )
+            except Competitor.DoesNotExist:
+                pass
+            return {"status": "failed", "briefing_id": None}
+
         if self.request.retries >= self.max_retries:
             try:
                 competitor = Competitor.objects.get(pk=competitor_id)
