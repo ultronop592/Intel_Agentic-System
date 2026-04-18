@@ -1,8 +1,8 @@
 import logging
+import traceback
 
 from celery import shared_task
 from celery.exceptions import SoftTimeLimitExceeded
-from django.core.cache import cache
 from django.db import transaction
 from django.utils import timezone
 from django.conf import settings
@@ -14,26 +14,54 @@ from competitors.models import Competitor, CompetitorSnapshot, DiscoveredPage
 logger = logging.getLogger(__name__)
 
 
+def _safe_cache_op(func, *args, **kwargs):
+    """Run a cache operation, but never let it crash the task."""
+    try:
+        from django.core.cache import cache
+        return func(cache, *args, **kwargs)
+    except Exception as e:
+        logger.warning("Cache operation failed (non-fatal): %s", e)
+        return None
+
+
 def _lock_key(competitor_id: int) -> str:
     return f"competitor-agent-lock:{competitor_id}"
 
 
+def _is_eager():
+    return getattr(settings, 'CELERY_TASK_ALWAYS_EAGER', False)
+
+
+def _mark_failed(competitor_id):
+    """Mark a competitor as failed — used in multiple except blocks."""
+    try:
+        comp = Competitor.objects.get(pk=competitor_id)
+        comp.last_status = Competitor.STATUS_FAILED
+        comp.last_scraped = timezone.now()
+        comp.current_task_id = ""
+        comp.current_task_started_at = None
+        comp.save(update_fields=["last_status", "last_scraped", "current_task_id", "current_task_started_at"])
+    except Competitor.DoesNotExist:
+        pass
+
+
 @shared_task(bind=True, max_retries=2, soft_time_limit=120, time_limit=180)
 def run_agent_for_competitor(self, competitor_id: int) -> dict:
-    logger.info(f"Agent started for competitor {competitor_id}")
-    
+    logger.info("=== Agent run START for competitor %s ===", competitor_id)
+
     lock_key = _lock_key(competitor_id)
-    lock_acquired = cache.add(lock_key, "1", timeout=900)
-    if not lock_acquired:
-        if cache.get(lock_key) == "queued":
-            cache.set(lock_key, "running", timeout=900)
-        else:
-            return {"status": "already_running", "briefing_id": None}
-    else:
-        cache.set(lock_key, "running", timeout=900)
+
+    # Advisory lock — non-fatal if Redis is unreachable
+    lock_val = _safe_cache_op(lambda c: c.get(lock_key))
+    if lock_val and lock_val != "queued":
+        logger.info("Lock already held for competitor %s, skipping.", competitor_id)
+        return {"status": "already_running", "briefing_id": None}
+    _safe_cache_op(lambda c: c.set(lock_key, "running", timeout=900))
 
     try:
         competitor = Competitor.objects.select_related("user").get(pk=competitor_id)
+        logger.info("Competitor loaded: %s (%s)", competitor.name, competitor.url)
+
         latest_snapshot = competitor.snapshots.only("id", "raw_text", "content_hash").first()
         state = {
             "competitor_id": competitor.id,
@@ -47,15 +75,14 @@ def run_agent_for_competitor(self, competitor_id: int) -> dict:
             "content_hash": "",
             "error": None,
         }
+
+        logger.info("Invoking agent graph...")
         result = build_graph().invoke(state)
-        logger.info(f"Graph result: {result}")
+        logger.info("Graph finished. error=%s, has_changes=%s", result.get("error"), result.get("has_changes"))
 
         if result.get("error"):
-            competitor.last_status = Competitor.STATUS_FAILED
-            competitor.last_scraped = timezone.now()
-            competitor.current_task_id = ""
-            competitor.current_task_started_at = None
-            competitor.save(update_fields=["last_status", "last_scraped", "current_task_id", "current_task_started_at"])
+            logger.error("Graph returned error: %s", result["error"])
+            _mark_failed(competitor_id)
             return {"status": "failed", "briefing_id": None}
 
         clean_text = result["scraped_data"].get("clean_text", "")
@@ -70,6 +97,7 @@ def run_agent_for_competitor(self, competitor_id: int) -> dict:
                     content_hash=content_hash,
                     screenshot=result["scraped_data"].get("screenshot_path", ""),
                 )
+            logger.info("New snapshot created for competitor %s", competitor_id)
 
         briefing_id = None
         # Save Briefing even if has_changes is None (treat None as True)
@@ -83,7 +111,7 @@ def run_agent_for_competitor(self, competitor_id: int) -> dict:
                 status=Briefing.STATUS_COMPLETED,
             )
             briefing_id = briefing.id
-            print(f"Saved briefing with pk: {briefing.pk}")
+            logger.info("Saved briefing pk=%s for competitor %s", briefing.pk, competitor_id)
 
         # Save discovered pages
         discovered_data = result.get("discovered_pages", [])
@@ -101,56 +129,32 @@ def run_agent_for_competitor(self, competitor_id: int) -> dict:
         competitor.save(
             update_fields=["last_scraped", "last_status", "current_task_id", "current_task_started_at"]
         )
+        logger.info("=== Agent run SUCCESS for competitor %s (briefing=%s) ===", competitor_id, briefing_id)
         return {"status": "success" if briefing_id else "no_changes", "briefing_id": briefing_id}
+
     except Competitor.DoesNotExist:
-        logger.warning("Competitor %s does not exist for agent run.", competitor_id)
+        logger.warning("Competitor %s does not exist.", competitor_id)
         return {"status": "failed", "briefing_id": None}
+
     except SoftTimeLimitExceeded:
-        logger.error("Agent run timed out for competitor %s", competitor_id)
-        try:
-            competitor = Competitor.objects.get(pk=competitor_id)
-            competitor.last_status = Competitor.STATUS_FAILED
-            competitor.last_scraped = timezone.now()
-            competitor.current_task_id = ""
-            competitor.current_task_started_at = None
-            competitor.save(
-                update_fields=["last_status", "last_scraped", "current_task_id", "current_task_started_at"]
-            )
-        except Competitor.DoesNotExist:
-            pass
+        logger.error("Agent run TIMED OUT for competitor %s", competitor_id)
+        _mark_failed(competitor_id)
         return {"status": "failed", "briefing_id": None}
+
     except Exception as exc:
-        logger.exception("Agent run failed for competitor %s", competitor_id)
-        if getattr(settings, 'CELERY_TASK_ALWAYS_EAGER', False) or self.request.is_eager:
-            try:
-                competitor = Competitor.objects.get(pk=competitor_id)
-                competitor.last_status = Competitor.STATUS_FAILED
-                competitor.last_scraped = timezone.now()
-                competitor.current_task_id = ""
-                competitor.current_task_started_at = None
-                competitor.save(
-                    update_fields=["last_status", "last_scraped", "current_task_id", "current_task_started_at"]
-                )
-            except Competitor.DoesNotExist:
-                pass
+        logger.exception("=== Agent run FAILED for competitor %s ===\n%s", competitor_id, traceback.format_exc())
+        _mark_failed(competitor_id)
+
+        # In eager mode, never retry — just return the failure gracefully
+        if _is_eager():
             return {"status": "failed", "briefing_id": None}
 
         if self.request.retries >= self.max_retries:
-            try:
-                competitor = Competitor.objects.get(pk=competitor_id)
-                competitor.last_status = Competitor.STATUS_FAILED
-                competitor.last_scraped = timezone.now()
-                competitor.current_task_id = ""
-                competitor.current_task_started_at = None
-                competitor.save(
-                    update_fields=["last_status", "last_scraped", "current_task_id", "current_task_started_at"]
-                )
-            except Competitor.DoesNotExist:
-                logger.warning("Competitor %s disappeared while updating failure state.", competitor_id)
+            return {"status": "failed", "briefing_id": None}
         raise self.retry(exc=exc, countdown=30)
 
     finally:
-        cache.delete(lock_key)
+        _safe_cache_op(lambda c: c.delete(lock_key))
 
 
 @shared_task
@@ -158,8 +162,6 @@ def run_all_agents() -> int:
     count = 0
     competitors = Competitor.objects.select_related("user").filter(is_active=True)
     for competitor in competitors:
-        if cache.add(_lock_key(competitor.id), "queued", timeout=30):
-            cache.delete(_lock_key(competitor.id))
-            run_agent_for_competitor.delay(competitor.id)
-            count += 1
+        run_agent_for_competitor.delay(competitor.id)
+        count += 1
     return count
