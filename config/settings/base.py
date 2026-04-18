@@ -137,19 +137,12 @@ CELERY_TASK_EAGER_PROPAGATES = (
 CELERY_RESULT_BACKEND = REDIS_URL
 CELERY_TASK_IGNORE_RESULT = False
 
-REDIS_CACHE_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
-
-cache_config = {
-    "BACKEND": "django.core.cache.backends.redis.RedisCache",
-    "LOCATION": REDIS_CACHE_URL,
-}
-
-if REDIS_CACHE_URL.startswith("rediss://"):
-    cache_config["OPTIONS"] = {
-        "ssl_cert_reqs": None,
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "LOCATION": "intel-agent-cache",
     }
-
-CACHES = {"default": cache_config}
+}
 
 DAILY_API_LIMIT = int(os.getenv("DAILY_API_LIMIT", "20"))
 
