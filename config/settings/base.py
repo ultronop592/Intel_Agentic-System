@@ -1,4 +1,5 @@
 import os
+import ssl
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -116,8 +117,9 @@ LOGOUT_REDIRECT_URL = "accounts:login"
 
 REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
 
-if REDIS_URL.startswith("rediss://") and "ssl_cert_reqs" not in REDIS_URL:
-    REDIS_URL = f"{REDIS_URL}?ssl_cert_reqs=none"
+if REDIS_URL.startswith("rediss://"):
+    CELERY_BROKER_USE_SSL = {"ssl_cert_reqs": ssl.CERT_NONE}
+    CELERY_REDIS_BACKEND_USE_SSL = {"ssl_cert_reqs": ssl.CERT_NONE}
 
 CELERY_BROKER_URL = REDIS_URL
 CELERY_ACCEPT_CONTENT = ["json"]
