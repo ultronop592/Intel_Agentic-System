@@ -24,6 +24,7 @@ services:
         value: "False"
       - key: DJANGO_SETTINGS_MODULE
         value: config.settings.production
+    preDeployCommand: "python manage.py migrate --noinput"
     dockerCommand: "./start.sh"
 
   - name: intel-agent-worker

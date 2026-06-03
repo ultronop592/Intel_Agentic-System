@@ -22,6 +22,9 @@ if DATABASE_URL:
             DATABASE_URL, conn_max_age=600, ssl_require=True
         )
     }
+    DATABASES["default"].setdefault("OPTIONS", {})
+    DATABASES["default"]["OPTIONS"]["DISABLE_SERVER_SIDE_CURSORS"] = True
+    DATABASES["default"]["CONN_HEALTH_CHECKS"] = True
 
 CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
 CELERY_TASK_ALWAYS_EAGER = True
